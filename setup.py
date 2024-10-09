@@ -11,12 +11,12 @@ setup(
 		"Dans-Diffraction >=3.2",
 		"pyquaternion >=0.9",
     ],
-	data_files=[('Lib/site-packages/indexGPU', ['Lib/site-packages/indexGPU/Indexation_GUI.ui']),
-    ],
+# 	data_files=[('Lib/site-packages/indexGPU', ['Lib/site-packages/indexGPU/Indexation_GUI.ui']),
+#     ],
     
-    # package_data={
-    # 'indexGPU': ['indexGPU/*.ui'],  # Inclure tous les fichiers .txt dans le dossier data
-    # },
+    package_data={
+    'indexGPU': ['Lib/site-packages/indexGPU/*.ui'],  # Inclure tous les fichiers .txt dans le dossier data
+    },
     
     
 )
