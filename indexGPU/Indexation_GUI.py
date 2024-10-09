@@ -23,10 +23,10 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import QPixmap
 
-from inichord import general_functions as gf
+from inichord import General_Functions as gf
 import inichord.Xallo as xa
 import inichord.indexation_tiff_sur_GPU_v27_lib_TSG as indGPU
-from inichord import IPF_V2_TSG as IPF_computation
+# from inichord import IPF_V2_TSG as IPF_computation
 from inichord import Symetry as sy
 
 from pyquaternion import Quaternion
