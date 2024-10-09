@@ -32,7 +32,7 @@ from indexGPU import Symetry as sy
 from pyquaternion import Quaternion
 
 path2thisFile = abspath(getsourcefile(lambda:0))
-uiclass, baseclass = pg.Qt.loadUiType(os.path.dirname(path2thisFile) + "/Indexation_v2_TSG.ui")
+uiclass, baseclass = pg.Qt.loadUiType(os.path.dirname(path2thisFile) + "/Indexation_GUI.ui")
 
 class MainWindow(uiclass, baseclass):
     def __init__(self, parent):
