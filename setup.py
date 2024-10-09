@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='indexGPU',
     version='0.1.0',
-    packages=['indexGPU'],
+    packages=find_packages(),
     install_requires=[
         "inichord >= 0.1.13",
 		"cupy-cuda12x >= 13.3.0",
@@ -12,6 +12,11 @@ setup(
 		"pyquaternion >=0.9",
     ],
 	data_files=[('indexGPU', ['indexGPU/Indexation_GUI.ui']),
-    ]
+    ],
+    
+    package_data={
+    'indexGPU': ['indexGPU/*.ui'],  # Inclure tous les fichiers .txt dans le dossier data
+    },
+    
     
 )
