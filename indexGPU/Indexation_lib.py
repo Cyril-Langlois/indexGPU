@@ -4,10 +4,10 @@
 Created on Wed Feb  1 20:53:26 2023
 @author: clanglois1
 """
-import inichord_GPUindex.Xallo as xa
-from inichord_GPUindex import Symetry as sy
-from inichord_GPUindex import Fct_profil_modification_02 as fct
-from inichord_GPUindex import general_functions as gf
+import indexGPU.Xallo as xa
+from indexGPU import Symetry as sy
+from inichord import Profile_Modification as fct
+from inichord import General_Functions as gf
 from PyQt5.QtWidgets import QApplication
 
 from pyquaternion import Quaternion
