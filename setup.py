@@ -11,7 +11,7 @@ setup(
 		"Dans-Diffraction >=3.2",
 		"pyquaternion >=0.9",
     ],
-	data_files=[('.', ['./Indexation_GUI.ui']),
+	data_files=[('indexGPU', ['indexGPU/Indexation_GUI.ui']),
     ]
     
 )
