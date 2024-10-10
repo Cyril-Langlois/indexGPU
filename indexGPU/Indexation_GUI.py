@@ -21,7 +21,6 @@ from types import SimpleNamespace
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtGui import QPixmap
 
 from inichord import General_Functions as gf
 import indexGPU.Xallo as xa
@@ -84,10 +83,6 @@ class MainWindow(uiclass, baseclass):
         self.TheoProfiles.stateChanged.connect(self.drawCHORDprofiles) # Allow the visualization of the theoretical profiles
         self.ModProfiles.stateChanged.connect(self.drawCHORDprofiles) # Allow the visualization of the profiles used for indexing
         
-        # Icons sizes management for QMessageBox
-        self.pixmap = QPixmap("icons/Indexation_icon.png")
-        self.pixmap = self.pixmap.scaled(100, 100)
-
         app = QApplication.instance()
         screen = app.screenAt(self.pos())
         geometry = screen.availableGeometry()
@@ -767,7 +762,7 @@ class MainWindow(uiclass, baseclass):
             else:
                 self.profiles.plot(self.Current_stack[:, self.x, self.y], pen=pen, name='Raw profiles') # Plot of the raw profile
                     
-            styles = {"color": "black", "font-size": "40px", "font-family": "Noto Sans Cond"} # Style for labels
+            styles = {"color": "black", "font-size": "15px", "font-family": "Noto Sans Cond"} # Style for labels
             
             self.profiles.setLabel("left", "GrayScale value", **styles) # Import style for Y label
             self.profiles.setLabel("bottom", "Slice", **styles) # Import style for X label
@@ -796,7 +791,7 @@ class MainWindow(uiclass, baseclass):
             pen = pg.mkPen(color=self.parent.color4, width=5) # Color and line width of the profile
             self.Plot_distance.plot(self.qualValue, pen=pen) # Plot of the profile
             
-            styles = {"color": "black", "font-size": "40px", "font-family": "Noto Sans Cond"} # Style for labels
+            styles = {"color": "black", "font-size": "15px", "font-family": "Noto Sans Cond"} # Style for labels
             
             self.Plot_distance.setLabel("left", "Quality (%)", **styles) # Import style for Y label
             
@@ -824,7 +819,7 @@ class MainWindow(uiclass, baseclass):
             pen = pg.mkPen(color=self.parent.color4, width=5) # Color and line width of the profile
             self.Plot_misorientation.plot(self.disOvalues, pen=pen) # Plot of the profile
             
-            styles = {"color": "black", "font-size": "40px", "font-family": "Noto Sans Cond"} # Style for labels
+            styles = {"color": "black", "font-size": "15px", "font-family": "Noto Sans Cond"} # Style for labels
             
             self.Plot_misorientation.setLabel("left", "Misorientation (°)", **styles) # Import style for Y label
             
