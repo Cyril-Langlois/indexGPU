@@ -19,7 +19,7 @@ from orix.quaternion import symmetry
 from tkinter import filedialog
 from types import SimpleNamespace
 
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QLabel, QDialog, QVBoxLayout, QPushButton
 from PyQt5 import QtCore, QtGui
 
 from inichord import General_Functions as gf
@@ -92,6 +92,32 @@ class MainWindow(uiclass, baseclass):
         self.screen = screen
 
 #%% Functions
+    def popup_message(self,title,text,icon):
+        msg = QDialog(self) # Create a Qdialog box
+        msg.setWindowTitle(title)
+        msg.setWindowIcon(QtGui.QIcon(icon))
+        
+        label = QLabel(text) # Create a QLabel for the text
+        
+        font = label.font() # Modification of the font
+        font.setPointSize(8)  # Font size modification
+        label.setFont(font)
+        
+        label.setAlignment(QtCore.Qt.AlignCenter) # Text centering
+        label.setWordWrap(False)  # Deactivate the line return
+
+        ok_button = QPushButton("OK") # Creation of the Qpushbutton
+        ok_button.clicked.connect(msg.accept)  # Close the box when pushed
+        
+        layout = QVBoxLayout() # Creation of the vertical layout
+        layout.addWidget(label)       # Add text
+        layout.addWidget(ok_button)   # Add button
+        
+        msg.setLayout(layout) # Apply position 
+        msg.adjustSize() # Automatically adjust size of the window
+        
+        msg.exec_() # Display the message box
+        
     def loaddata(self): # Allow to load the image serie, the CIF file and the database
         self.Info_box.clear() # Clear the information box
         self.preInd = indGPU.preIndexation() # Ask to open the three files
@@ -193,7 +219,7 @@ class MainWindow(uiclass, baseclass):
             self.SymQ = sy.get_proper_quaternions_from_CIF(self.CIFpath[0])
             
         except: # If the location is unreachable, then it is mandatory to search manually
-            self.parent.popup_message("Indexation","Please import the CIF file",'icons/Indexation_icon.png')
+            self.popup_message("Indexation","Please import the CIF file",'icons/Indexation_icon.png')
             self.CIFpath[0] = filedialog.askopenfilename(title='fichier CIF', multiple=True)[0]
             
             self.phases.append(diffpy.structure.loadStructure(self.CIFpath[0]))
@@ -631,7 +657,7 @@ class MainWindow(uiclass, baseclass):
             tf.imwrite(self.StackDir + '/IPF_Z.tiff',IPF_map_Z)
             
         # Finished message
-        self.parent.popup_message("Indexation","Saving process is over.",'icons/Indexation_icon.png')
+        self.popup_message("Indexation","Saving process is over.",'icons/Indexation_icon.png')
 
     def mouseMoved(self, e):
         pos = e[0]
