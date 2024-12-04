@@ -4,29 +4,20 @@
 Created on Wed Feb  1 20:53:26 2023
 @author: clanglois1
 """
-import os
 
-import LibrairiesCyril.Xallo as xa
-from LibrairiesCyril import Symetry as sy
-from LibrairiesCyril import Fct_profil_modification_02 as fct
-from LibrairiesCyril import general_functions as gf
+import indexGPU.Xallo as xa
+from indexGPU import Symetry as sy
+from inichord import Profil_Modification as fct
+from inichord import General_Functions as gf
 
-from numba import jit
 from pyquaternion import Quaternion
-import os.path
 import cupy as cp
 import h5py
 import numpy as np
-import tkinter as tk
-from tkinter import filedialog, Tk
-from configparser import ConfigParser
+
 import tifffile as tf
 import time
 
-import scipy.io.wavfile
-import scipy.signal
-from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
-import matplotlib.pyplot as plt
 
 def DBopen(DB):
     '''    
