@@ -7,7 +7,7 @@ Created on Wed Feb  1 20:53:26 2023
 
 import indexGPU.Xallo as xa
 from indexGPU import Symetry as sy
-from inichord import Profil_Modification as fct
+from inichord import Profile_Modification as fct
 from inichord import General_Functions as gf
 
 from pyquaternion import Quaternion
