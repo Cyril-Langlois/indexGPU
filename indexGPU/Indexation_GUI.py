@@ -436,9 +436,9 @@ class MainWindow(uiclass, baseclass):
                 
             # Specify which type of indexation must be use
             if self.methodChoice == "Classical indexation":
-                Op1 = ['Diff', 0, 5]
+                Op1 = ['Diff', 0]
             elif self.methodChoice == "Derivative indexation":
-                Op1 = ['Diff', 1, 5]
+                Op1 = ['Diff', 1]
                 
             Workflow = []
             Workflow.append(Op1)
