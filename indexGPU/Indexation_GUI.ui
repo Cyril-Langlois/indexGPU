@@ -192,7 +192,7 @@ QGroupBox {
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Load (1) image serie ; (2) CIF file ; (3) database.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
-           <string>Open</string>
+           <string>Open - test</string>
           </property>
           <property name="icon">
            <iconset>
