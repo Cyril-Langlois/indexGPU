@@ -86,7 +86,7 @@ class MainWindow(uiclass, baseclass):
         self.savgol_label1.setVisible(False) # Hide window label for savgol
         self.savgol_label2.setVisible(False) # Hide order label for savgol
         
-        self.ui.PresetBox.currentIndexChanged.connect(self.hide_and_show)
+        self.PresetBox.currentIndexChanged.connect(self.hide_and_show)
 
         self.TheoProfiles.stateChanged.connect(self.drawCHORDprofiles) # Allow the visualization of the theoretical profiles
         self.ModProfiles.stateChanged.connect(self.drawCHORDprofiles) # Allow the visualization of the profiles used for indexing
