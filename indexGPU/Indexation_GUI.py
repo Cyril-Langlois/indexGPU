@@ -79,7 +79,10 @@ class MainWindow(uiclass, baseclass):
         self.OriBox.currentTextChanged.connect(self.Change_IPFView) # Allow different IPF map to be displayed
         self.progressBar.setVisible(False) # The progress bar is hidden for clarity
         self.mouseLock.setVisible(False)
-
+        
+        self.window_SpinBox.setVisible(False) # Hide window length for savgol
+        self.poly_SpinBox.setVisible(False) # Hide order for savgol
+        
         self.TheoProfiles.stateChanged.connect(self.drawCHORDprofiles) # Allow the visualization of the theoretical profiles
         self.ModProfiles.stateChanged.connect(self.drawCHORDprofiles) # Allow the visualization of the profiles used for indexing
         
@@ -333,6 +336,10 @@ class MainWindow(uiclass, baseclass):
             elif self.methodChoice == "Derivative indexation":
                 Op1 = ['Diff', 1]   
             elif self.methodChoice == "Savgol derivative indexation":
+                
+                self.window_SpinBox.setVisible(True) # Show window length for savgol
+                self.poly_SpinBox.setVisible(True) # Show order for savgol
+                
                 Op1 = ['Diff', 1, self.savgol_window, self.savgol_polyorder]
                 
             Workflow = []
@@ -448,6 +455,10 @@ class MainWindow(uiclass, baseclass):
             elif self.methodChoice == "Derivative indexation":
                 Op1 = ['Diff', 1]
             elif self.methodChoice == "Savgol derivative indexation":
+                
+                self.window_SpinBox.setVisible(True) # Show window length for savgol
+                self.poly_SpinBox.setVisible(True) # Show order for savgol
+                
                 Op1 = ['Diff', 1, self.savgol_window, self.savgol_polyorder]
                 
             Workflow = []
