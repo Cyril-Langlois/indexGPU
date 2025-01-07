@@ -488,7 +488,7 @@ QGroupBox {
                 <number>1</number>
                </property>
                <property name="value">
-                <number>5</number>
+                <number>3</number>
                </property>
               </widget>
              </item>
