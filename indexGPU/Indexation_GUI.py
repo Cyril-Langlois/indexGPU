@@ -332,7 +332,7 @@ class MainWindow(uiclass, baseclass):
                 Op1 = ['Diff', 0]
             elif self.methodChoice == "Derivative indexation":
                 Op1 = ['Diff', 1]   
-            elif self.methodChoice == "Savgol Derivative indexation":
+            elif self.methodChoice == "Savgol derivative indexation":
                 Op1 = ['Diff', 1, self.savgol_window, self.savgol_polyorder]
                 
             Workflow = []
@@ -447,7 +447,7 @@ class MainWindow(uiclass, baseclass):
                 Op1 = ['Diff', 0]
             elif self.methodChoice == "Derivative indexation":
                 Op1 = ['Diff', 1]
-            elif self.methodChoice == "Savgol Derivative indexation":
+            elif self.methodChoice == "Savgol derivative indexation":
                 Op1 = ['Diff', 1, self.savgol_window, self.savgol_polyorder]
                 
             Workflow = []

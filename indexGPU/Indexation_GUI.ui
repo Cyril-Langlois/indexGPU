@@ -192,7 +192,7 @@ QGroupBox {
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Load (1) image serie ; (2) CIF file ; (3) database.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
-           <string>Open - test</string>
+           <string>Open</string>
           </property>
           <property name="icon">
            <iconset>
@@ -260,6 +260,11 @@ QGroupBox {
              <item>
               <property name="text">
                <string>Derivative indexation</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Savgol derivative indexation</string>
               </property>
              </item>
             </widget>
