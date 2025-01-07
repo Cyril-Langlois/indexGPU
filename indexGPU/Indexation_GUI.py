@@ -323,12 +323,17 @@ class MainWindow(uiclass, baseclass):
             self.progressBar.setFormat("Indexation")
             self.Info_box.clear() # Clear the information box
             self.methodChoice = self.PresetBox.currentText() # Choice between diff0 or diff1
-                
+
+            self.savgol_window = self.window_SpinBox.value() # Window length of the filter
+            self.savgol_polyorder = self.poly_SpinBox.value() # Order of the polynomial
+            
             # Specify which type of indexation must be use
             if self.methodChoice == "Classical indexation":
                 Op1 = ['Diff', 0]
             elif self.methodChoice == "Derivative indexation":
-                Op1 = ['Diff', 1]
+                Op1 = ['Diff', 1]   
+            elif self.methodChoice == "Savgol Derivative indexation":
+                Op1 = ['Diff', 1, self.savgol_window, self.savgol_polyorder]
                 
             Workflow = []
             Workflow.append(Op1)
@@ -434,11 +439,16 @@ class MainWindow(uiclass, baseclass):
             self.Info_box.clear() # Clear the information box
             self.methodChoice = self.PresetBox.currentText() # Choice between diff0 or diff1
                 
+            self.savgol_window = self.window_SpinBox.value() # Window length of the filter
+            self.savgol_polyorder = self.poly_SpinBox.value() # Order of the polynomial
+            
             # Specify which type of indexation must be use
             if self.methodChoice == "Classical indexation":
                 Op1 = ['Diff', 0]
             elif self.methodChoice == "Derivative indexation":
                 Op1 = ['Diff', 1]
+            elif self.methodChoice == "Savgol Derivative indexation":
+                Op1 = ['Diff', 1, self.savgol_window, self.savgol_polyorder]
                 
             Workflow = []
             Workflow.append(Op1)
