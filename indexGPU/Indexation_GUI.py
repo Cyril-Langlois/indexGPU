@@ -83,6 +83,23 @@ class MainWindow(uiclass, baseclass):
         self.window_SpinBox.setVisible(False) # Hide window length for savgol
         self.poly_SpinBox.setVisible(False) # Hide order for savgol
         
+        self.savgol_label1.setVisible(False) # Hide window label for savgol
+        self.savgol_label2.setVisible(False) # Hide order label for savgol
+        
+        self.methodChoice = self.PresetBox.currentText() # Choice between diff0 or diff1
+        if self.methodChoice == "Savgol derivative indexation":
+            self.window_SpinBox.setVisible(True) # Show window length for savgol
+            self.poly_SpinBox.setVisible(True) # Show order for savgol
+            
+            self.savgol_label1.setVisible(True) # Show window label for savgol
+            self.savgol_label2.setVisible(True) # Show order label for savgol
+        else : 
+            self.window_SpinBox.setVisible(False) # Hide window length for savgol
+            self.poly_SpinBox.setVisible(False) # Hide order for savgol
+            
+            self.savgol_label1.setVisible(False) # Hide window label for savgol
+            self.savgol_label2.setVisible(False) # Hide order label for savgol
+
         self.TheoProfiles.stateChanged.connect(self.drawCHORDprofiles) # Allow the visualization of the theoretical profiles
         self.ModProfiles.stateChanged.connect(self.drawCHORDprofiles) # Allow the visualization of the profiles used for indexing
         
@@ -336,10 +353,6 @@ class MainWindow(uiclass, baseclass):
             elif self.methodChoice == "Derivative indexation":
                 Op1 = ['Diff', 1]   
             elif self.methodChoice == "Savgol derivative indexation":
-                
-                self.window_SpinBox.setVisible(True) # Show window length for savgol
-                self.poly_SpinBox.setVisible(True) # Show order for savgol
-                
                 Op1 = ['Diff', 1, self.savgol_window, self.savgol_polyorder]
                 
             Workflow = []
@@ -455,10 +468,6 @@ class MainWindow(uiclass, baseclass):
             elif self.methodChoice == "Derivative indexation":
                 Op1 = ['Diff', 1]
             elif self.methodChoice == "Savgol derivative indexation":
-                
-                self.window_SpinBox.setVisible(True) # Show window length for savgol
-                self.poly_SpinBox.setVisible(True) # Show order for savgol
-                
                 Op1 = ['Diff', 1, self.savgol_window, self.savgol_polyorder]
                 
             Workflow = []
