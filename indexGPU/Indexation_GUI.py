@@ -332,213 +332,143 @@ class MainWindow(uiclass, baseclass):
         self.indexation.rawImage = self.rawImage
         self.indexation.Treatment_theo_prof = self.Treatment_theo_prof
         self.indexation.quality_map = self.quality_map
+        
+        
+    def labelIndex(self):
+        # Search for the labeled map or ask to import it
+        try :
+            labels = self.parent.Label_image
+            labels = np.rot90(np.flip(labels, 0), k=1, axes=(1, 0))
+        except:
+            StackLoc, StackDir = gf.getFilePathDialog("labeled map") 
+            labels = tf.TiffFile(StackLoc[0]).asarray() # Import the label map
+        
+        # Generation of the maps using the information of the clustered map          
+        # Create the new arrays using np.where
+        self.indexation.quality_map_tempo = np.zeros((len(labels),len(labels[0])))
+        self.indexation.nScoresOri_tempo = np.zeros((1,4,len(labels),len(labels[0])))
+        self.indexation.nScoresDist_tempo = np.zeros((1,len(labels),len(labels[0])))
+        self.indexation.rawImage_tempo = np.zeros((len(self.indexation.rawImage),len(labels),len(labels[0])))
+        self.indexation.nScoresStack_tempo = np.zeros((1,len(self.indexation.nScoresStack[0]),len(labels),len(labels[0])))
+        self.indexation.Treatment_theo_prof_tempo = np.zeros((1,len(self.indexation.Treatment_theo_prof[0]),len(labels),len(labels[0])))
+        self.indexation.testArrayList_tempo = np.zeros((len(self.indexation.testArrayList),len(labels),len(labels[0])))
+
+        self.progressBar.setValue(0)
+        self.progressBar.setFormat("Map formation: %p%")
+        self.progressBar.setRange(0, int(np.max(labels))-1) # Set the range accordingly to the number of labels
+
+        for i in range(1,int(np.max(labels))):
+            
+            QApplication.processEvents()    
+            self.ValSlice = i
+            self.progression_bar()
+            
+            var = np.where(labels == i)
+            self.indexation.quality_map_tempo[var] = self.indexation.quality_map[:,i-1]
+            self.indexation.nScoresOri_tempo[:,:,var[0],var[1]] = self.indexation.nScoresOri[:,:,:,i-1]
+            self.indexation.nScoresDist_tempo[:,var[0],var[1]] = self.indexation.nScoresDist[:,:,i-1]
+            self.indexation.rawImage_tempo[:,var[0],var[1]] = self.indexation.rawImage[:,:,i-1]
+            self.indexation.nScoresStack_tempo[:,:,var[0],var[1]] = self.indexation.nScoresStack[:,:,:,i-1]
+            self.indexation.Treatment_theo_prof_tempo[:,:,var[0],var[1]] = self.indexation.Treatment_theo_prof[:,:,:,i-1]
+            self.indexation.testArrayList_tempo[:,var[0],var[1]] = self.indexation.testArrayList[:,:,i-1]
+        
+        # Then replace the arrays 
+        self.indexation.quality_map = self.indexation.quality_map_tempo
+        self.indexation.nScoresOri = self.indexation.nScoresOri_tempo
+        self.indexation.nScoresDist = self.indexation.nScoresDist_tempo
+        self.indexation.rawImage = self.indexation.rawImage_tempo
+        self.indexation.nScoresStack = self.indexation.nScoresStack_tempo
+        self.indexation.Treatment_theo_prof = self.indexation.Treatment_theo_prof_tempo
+        self.indexation.testArrayList = self.indexation.testArrayList_tempo
+        
+        # Recreate an h5 file with the new data
+        self.savingRes_cluster()
 
     def Run_indexation(self):
-        if self.Cluster_index.isChecked(): # Specific to cluster indexation 
-            # Search for the labeled map or ask to import it
-            try :
-                labels = self.parent.Label_image
-                labels = np.rot90(np.flip(labels, 0), k=1, axes=(1, 0))
-            except:
-                StackLoc, StackDir = gf.getFilePathDialog("labeled map") 
-                labels = tf.TiffFile(StackLoc[0]).asarray() # Import the label map
         
-            self.progressBar.setVisible(True) # The progress bar is shown for clarity
-            self.progressBar.setValue(0)
-            self.progressBar.setFormat("Indexation")
-            self.Info_box.clear() # Clear the information box
-            self.methodChoice = self.PresetBox.currentText() # Choice between diff0 or diff1
+        self.progressBar.setVisible(True) # The progress bar is shown for clarity
+        self.progressBar.setValue(0)
+        self.progressBar.setFormat("Indexation")
+        self.Info_box.clear() # Clear the information box
+        self.methodChoice = self.PresetBox.currentText() # Choice between diff0 or diff1
 
-            self.savgol_window = self.window_SpinBox.value() # Window length of the filter
-            self.savgol_polyorder = self.poly_SpinBox.value() # Order of the polynomial
+        self.savgol_window = self.window_SpinBox.value() # Window length of the filter
+        self.savgol_polyorder = self.poly_SpinBox.value() # Order of the polynomial
+        
+        # Specify which type of indexation must be use
+        if self.methodChoice == "Classical indexation":
+            Op1 = ['Diff', 0]
+        elif self.methodChoice == "Derivative indexation":
+            Op1 = ['Diff', 1]   
+        elif self.methodChoice == "Savgol derivative indexation":
+            Op1 = ['Diff', 1, self.savgol_window, self.savgol_polyorder]
             
-            # Specify which type of indexation must be use
-            if self.methodChoice == "Classical indexation":
-                Op1 = ['Diff', 0]
-            elif self.methodChoice == "Derivative indexation":
-                Op1 = ['Diff', 1]   
-            elif self.methodChoice == "Savgol derivative indexation":
-                Op1 = ['Diff', 1, self.savgol_window, self.savgol_polyorder]
+        Workflow = []
+        Workflow.append(Op1)
+        
+        self.BatchProfiles_value = self.Profiles_SpinBox.value() # Number of experimental profiles per batch
+        self.BatchDatabase_value = self.Database_SpinBox.value() # Number of theoretical profiles per batch
+        
+        # Indexation preparation
+        # self.indexation = indGPU.IndexationGPUderiv(self,self.preInd.Stack, self.PathDir, self.preInd.DatabaseLoc, self.preInd.CifLoc, Workflow = Workflow, normType = "centered euclidian", nbSTACK=self.BatchProfiles_value, nbDB = self.BatchDatabase_value)
+        self.indexation = indGPU.IndexationGPUderiv(self,self.preInd.Stack, 
+                                                    self.PathDir, self.preInd.phaseList[0].DatabaseLoc, 
+                                                    self.preInd.phaseList[0].CifLoc, 
+                                                    Workflow = Workflow, 
+                                                    normType = "centered euclidian", nbSTACK=self.BatchProfiles_value,
+                                                    nbDB = self.BatchDatabase_value)
+        # Run indexation matching step
+        self.indexation.runIndexation()
+            
+        if self.Cluster_index.isChecked(): # Specific to cluster indexation 
+            self.labelIndex()
+            
+        # Keep the first and only score, then swapaxes
+        self.ori = self.indexation.nScoresOri[0,:,:,:]
+        self.ori = np.swapaxes(self.ori, 1, 2)
                 
-            Workflow = []
-            Workflow.append(Op1)
-            
-            self.BatchProfiles_value = self.Profiles_SpinBox.value() # Number of experimental profiles per batch
-            self.BatchDatabase_value = self.Database_SpinBox.value() # Number of theoretical profiles per batch
-            
-            # Indexation preparation
-            # self.indexation = indGPU.IndexationGPUderiv(self,self.preInd.Stack, self.PathDir, self.preInd.DatabaseLoc, self.preInd.CifLoc, Workflow = Workflow, normType = "centered euclidian", nbSTACK=self.BatchProfiles_value, nbDB = self.BatchDatabase_value)
-            self.indexation = indGPU.IndexationGPUderiv(self,self.preInd.Stack, 
-                                                        self.PathDir, self.preInd.phaseList[0].DatabaseLoc, 
-                                                        self.preInd.phaseList[0].CifLoc, 
-                                                        Workflow = Workflow, 
-                                                        normType = "centered euclidian", nbSTACK=self.BatchProfiles_value,
-                                                        nbDB = self.BatchDatabase_value)
-            # Run indexation matching step
-            self.indexation.runIndexation()
-            
-            # Generation of the maps using the information of the clustered map          
-            # Create the new arrays using np.where
-            self.indexation.quality_map_tempo = np.zeros((len(labels),len(labels[0])))
-            self.indexation.nScoresOri_tempo = np.zeros((1,4,len(labels),len(labels[0])))
-            self.indexation.nScoresDist_tempo = np.zeros((1,len(labels),len(labels[0])))
-            self.indexation.rawImage_tempo = np.zeros((len(self.indexation.rawImage),len(labels),len(labels[0])))
-            self.indexation.nScoresStack_tempo = np.zeros((1,len(self.indexation.nScoresStack[0]),len(labels),len(labels[0])))
-            self.indexation.Treatment_theo_prof_tempo = np.zeros((1,len(self.indexation.Treatment_theo_prof[0]),len(labels),len(labels[0])))
-            self.indexation.testArrayList_tempo = np.zeros((len(self.indexation.testArrayList),len(labels),len(labels[0])))
-
-            self.progressBar.setValue(0)
-            self.progressBar.setFormat("Map formation: %p%")
-            self.progressBar.setRange(0, int(np.max(labels))-1) # Set the range accordingly to the number of labels
-
-            for i in range(1,int(np.max(labels))):
-                
-                QApplication.processEvents()    
-                self.ValSlice = i
-                self.progression_bar()
-                
-                var = np.where(labels == i)
-                self.indexation.quality_map_tempo[var] = self.indexation.quality_map[:,i-1]
-                self.indexation.nScoresOri_tempo[:,:,var[0],var[1]] = self.indexation.nScoresOri[:,:,:,i-1]
-                self.indexation.nScoresDist_tempo[:,var[0],var[1]] = self.indexation.nScoresDist[:,:,i-1]
-                self.indexation.rawImage_tempo[:,var[0],var[1]] = self.indexation.rawImage[:,:,i-1]
-                self.indexation.nScoresStack_tempo[:,:,var[0],var[1]] = self.indexation.nScoresStack[:,:,:,i-1]
-                self.indexation.Treatment_theo_prof_tempo[:,:,var[0],var[1]] = self.indexation.Treatment_theo_prof[:,:,:,i-1]
-                self.indexation.testArrayList_tempo[:,var[0],var[1]] = self.indexation.testArrayList[:,:,i-1]
-            
-            # Then replace the arrays 
-            self.indexation.quality_map = self.indexation.quality_map_tempo
-            self.indexation.nScoresOri = self.indexation.nScoresOri_tempo
-            self.indexation.nScoresDist = self.indexation.nScoresDist_tempo
-            self.indexation.rawImage = self.indexation.rawImage_tempo
-            self.indexation.nScoresStack = self.indexation.nScoresStack_tempo
-            self.indexation.Treatment_theo_prof = self.indexation.Treatment_theo_prof_tempo
-            self.indexation.testArrayList = self.indexation.testArrayList_tempo
-            
-            # Recreate an h5 file with the new data
-            self.savingRes_cluster()
-            
-            # Keep the first and only score, then swapaxes
-            self.ori = self.indexation.nScoresOri[0,:,:,:]
-            self.ori = np.swapaxes(self.ori, 1, 2)
-                    
-            self.indexation.quality_map = np.flip(self.indexation.quality_map, 0) # Flip the array
-            self.indexation.quality_map = np.rot90(self.indexation.quality_map, k=1, axes=(1, 0)) # Rotate the array
-            
-            self.displayQuality(self.indexation.quality_map) # Display the quality map
-            
-            self.expSeries.setVisible(True) # Show the image serie display window
-            
-            self.indexation.rawImage = np.flip(self.indexation.rawImage, 1) # Flip the array
-            self.indexation.rawImage = np.rot90(self.indexation.rawImage, k=1, axes=(2, 1)) # Rotate the array
-            self.displayExpStack(self.indexation.rawImage) # Display the 3D array
-            
-            self.Info_box.ensureCursorVisible()
-            self.Info_box.insertPlainText("\n \u2022 Quality map has been computed.")
-            QApplication.processEvents()
-            
-            # Flip and rotate self.nScoresDist to be homogenenous (for computation)
-            self.indexation.nScoresDist = np.flip(self.indexation.nScoresDist, 1)
-            self.indexation.nScoresDist = np.rot90(self.indexation.nScoresDist, k=1, axes=(2, 1))
-            
-            # For viewing data diff or not OR theo profiles : extract of the first and only score then flip and rotate       
-            self.Current_stack = self.indexation.rawImage # Extract the stack of images
-            
-            self.theo_stack = self.indexation.nScoresStack[0, :, :, :]
-            self.theo_stack = np.flip(self.theo_stack, 1)
-            self.theo_stack = np.rot90(self.theo_stack, k=1, axes=(2, 1))
-            
-            self.stack_mod = self.indexation.Treatment_theo_prof[0, :, :, :]
-            self.stack_mod = np.flip(self.stack_mod, 1)
-            self.stack_mod = np.rot90(self.stack_mod, k=1, axes=(2, 1))
-            
-            self.expStack_mod = self.indexation.testArrayList
-            self.expStack_mod = np.flip(self.expStack_mod, 1)
-            self.expStack_mod = np.rot90(self.expStack_mod, k=1, axes=(2, 1))
-            
-            # Display of IPF map 
-            self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation.CIF, self.indexation.nScoresOri, IPF_view='Z')
-            self.IPF_map = np.flip(self.IPF_map,1)
-            self.IPF_map = np.rot90(self.IPF_map)
-             
-            self.displayIPFmap(self.IPF_map)    
-            self.progressBar.setVisible(False) # The progress bar is hidden for clarity
-        else : 
-            self.progressBar.setVisible(True) # The progress bar is shown for clarity
-            self.progressBar.setValue(0)
-            self.progressBar.setFormat("Indexation")
-            self.Info_box.clear() # Clear the information box
-            self.methodChoice = self.PresetBox.currentText() # Choice between diff0 or diff1
-                
-            self.savgol_window = self.window_SpinBox.value() # Window length of the filter
-            self.savgol_polyorder = self.poly_SpinBox.value() # Order of the polynomial
-            
-            # Specify which type of indexation must be use
-            if self.methodChoice == "Classical indexation":
-                Op1 = ['Diff', 0]
-            elif self.methodChoice == "Derivative indexation":
-                Op1 = ['Diff', 1]
-            elif self.methodChoice == "Savgol derivative indexation":
-                Op1 = ['Diff', 1, self.savgol_window, self.savgol_polyorder]
-                
-            Workflow = []
-            Workflow.append(Op1)
-            
-            self.BatchProfiles_value = self.Profiles_SpinBox.value() # Number of experimental profiles per batch
-            self.BatchDatabase_value = self.Database_SpinBox.value() # Number of theoretical profiles per batch
-            
-            # Indexation preparation
-            # self.indexation = indGPU.IndexationGPUderiv(self,self.preInd.Stack, self.PathDir, self.preInd.DatabaseLoc, self.preInd.CifLoc, Workflow = Workflow, normType = "centered euclidian", nbSTACK=self.BatchProfiles_value, nbDB = self.BatchDatabase_value)
-            self.indexation = indGPU.IndexationGPUderiv(self,self.preInd.Stack, 
-                                                        self.PathDir, self.preInd.phaseList[0].DatabaseLoc, 
-                                                        self.preInd.phaseList[0].CifLoc, 
-                                                        Workflow = Workflow, 
-                                                        normType = "centered euclidian", nbSTACK=self.BatchProfiles_value,
-                                                        nbDB = self.BatchDatabase_value)
-            # Run indexation matching step
-            self.indexation.runIndexation()
-            
-            # Keep the first and only score, then swapaxes
-            self.ori = self.indexation.nScoresOri[0,:,:,:]
-            self.ori = np.swapaxes(self.ori, 1, 2)
-                    
-            self.indexation.quality_map = np.flip(self.indexation.quality_map, 0) # Flip the array
-            self.indexation.quality_map = np.rot90(self.indexation.quality_map, k=1, axes=(1, 0)) # Rotate the array
-            
-            self.displayQuality(self.indexation.quality_map) # Display the quality map
-            
-            self.Info_box.ensureCursorVisible()
-            self.Info_box.insertPlainText("\n \u2022 Quality map has been computed.")
-            QApplication.processEvents()
-            
-            # Flip and rotate self.nScoresDist to be homogenenous (for computation)
-            self.indexation.nScoresDist = np.flip(self.indexation.nScoresDist, 1)
-            self.indexation.nScoresDist = np.rot90(self.indexation.nScoresDist, k=1, axes=(2, 1))
-            
-            # For viewing data diff or not OR theo profiles : extract of the first and only score then flip and rotate       
-            self.Current_stack = self.indexation.rawImage # Extract the stack of images
-            self.Current_stack = np.flip(self.Current_stack, 1) # Flip the array
-            self.Current_stack = np.rot90(self.Current_stack, k=1, axes=(2, 1)) # Rotate the array
-            
-            self.theo_stack = self.indexation.nScoresStack[0, :, :, :]
-            self.theo_stack = np.flip(self.theo_stack, 1)
-            self.theo_stack = np.rot90(self.theo_stack, k=1, axes=(2, 1))
-            
-            self.stack_mod = self.indexation.Treatment_theo_prof[0, :, :, :]
-            self.stack_mod = np.flip(self.stack_mod, 1)
-            self.stack_mod = np.rot90(self.stack_mod, k=1, axes=(2, 1))
-            
-            self.expStack_mod = self.indexation.testArrayList
-            self.expStack_mod = np.flip(self.expStack_mod, 1)
-            self.expStack_mod = np.rot90(self.expStack_mod, k=1, axes=(2, 1))
-            
-            # Display of IPF map 
-            self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation.CIF, self.indexation.nScoresOri, IPF_view='Z')
-            self.IPF_map = np.flip(self.IPF_map,1)
-            self.IPF_map = np.rot90(self.IPF_map)
-             
-            self.displayIPFmap(self.IPF_map)    
-            self.progressBar.setVisible(False) # The progress bar is hidden for clarity
+        self.indexation.quality_map = np.flip(self.indexation.quality_map, 0) # Flip the array
+        self.indexation.quality_map = np.rot90(self.indexation.quality_map, k=1, axes=(1, 0)) # Rotate the array
+        
+        self.displayQuality(self.indexation.quality_map) # Display the quality map
+        
+        self.expSeries.setVisible(True) # Show the image serie display window
+        
+        self.indexation.rawImage = np.flip(self.indexation.rawImage, 1) # Flip the array
+        self.indexation.rawImage = np.rot90(self.indexation.rawImage, k=1, axes=(2, 1)) # Rotate the array
+        self.displayExpStack(self.indexation.rawImage) # Display the 3D array
+        
+        self.Info_box.ensureCursorVisible()
+        self.Info_box.insertPlainText("\n \u2022 Quality map has been computed.")
+        QApplication.processEvents()
+        
+        # Flip and rotate self.nScoresDist to be homogenenous (for computation)
+        self.indexation.nScoresDist = np.flip(self.indexation.nScoresDist, 1)
+        self.indexation.nScoresDist = np.rot90(self.indexation.nScoresDist, k=1, axes=(2, 1))
+        
+        # For viewing data diff or not OR theo profiles : extract of the first and only score then flip and rotate       
+        self.Current_stack = self.indexation.rawImage # Extract the stack of images
+        
+        self.theo_stack = self.indexation.nScoresStack[0, :, :, :]
+        self.theo_stack = np.flip(self.theo_stack, 1)
+        self.theo_stack = np.rot90(self.theo_stack, k=1, axes=(2, 1))
+        
+        self.stack_mod = self.indexation.Treatment_theo_prof[0, :, :, :]
+        self.stack_mod = np.flip(self.stack_mod, 1)
+        self.stack_mod = np.rot90(self.stack_mod, k=1, axes=(2, 1))
+        
+        self.expStack_mod = self.indexation.testArrayList
+        self.expStack_mod = np.flip(self.expStack_mod, 1)
+        self.expStack_mod = np.rot90(self.expStack_mod, k=1, axes=(2, 1))
+        
+        # Display of IPF map 
+        self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation.CIF, self.indexation.nScoresOri, IPF_view='Z')
+        self.IPF_map = np.flip(self.IPF_map,1)
+        self.IPF_map = np.rot90(self.IPF_map)
+         
+        self.displayIPFmap(self.IPF_map)    
+        self.progressBar.setVisible(False) # The progress bar is hidden for clarity
+        
         
     def savingRes_cluster(self):
         ti = time.strftime("%Y-%m-%d__%Hh-%Mm-%Ss")
