@@ -563,6 +563,28 @@ class IndexationGPUderiv:
         QApplication.processEvents()
 
 #%% Pre-indexation
+class phaseObject:
+    """
+    Classe permettant de stocker les chemins des fichiers CIF et DB, le workflow correspondant et la taille de la DB.
+    """
+    def __init__(self, nProf = 2_000_000, diff = 0, savgol = False, window = 3, poly = 2):
+        #Stockage CIF
+        filepath,  self.CifDir = gf.getFilePathDialog('CIF selection')
+        self.CifLoc = filepath[0]
+        #Stockage DB
+        filepath, self.DatabaseDir = gf.getFilePathDialog('theoretical test profiles (*.crddb)')
+        self.DatabaseLoc = filepath[0]
+        #Creation workflow
+        if savgol:
+            Op = ['Diff', diff, window, poly]
+        else:
+            Op = ['Diff', diff]
+            
+        self.Workflow = [Op]
+        #Choix taille DB
+        self.sizeDB = nProf
+        
+        self.savgol = savgol
 
 class preIndexation:
     """
@@ -587,11 +609,15 @@ class preIndexation:
         else:
             self.Stack = tf.TiffFile(self.StackLoc[0]).asarray()
 
-        filepath,  self.CifDir = gf.getFilePathDialog('CIF selection')
-        self.CifLoc = filepath[0]
+        # filepath,  self.CifDir = gf.getFilePathDialog('CIF selection')
+        # self.CifLoc = filepath[0]
         
-        filepath, self.DatabaseDir = gf.getFilePathDialog('theoretical test profiles (*.crddb)')
-        self.DatabaseLoc = filepath[0]
+        # filepath, self.DatabaseDir = gf.getFilePathDialog('theoretical test profiles (*.crddb)')
+        # self.DatabaseLoc = filepath[0]
+        
+        phase = phaseObject()
+        self.phaseList = [phase]
+        
 
     def popup_message(self,title,text,icon):
         msg = QMessageBox()

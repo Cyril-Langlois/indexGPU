@@ -161,7 +161,8 @@ class MainWindow(uiclass, baseclass):
         else:
             self.displayExpStack(self.Current_stack) # Display the 3D array
 
-        self.SymQ = sy.get_proper_quaternions_from_CIF(self.preInd.CifLoc) # Get the variable symQ for symmetry of quaternions
+        # self.SymQ = sy.get_proper_quaternions_from_CIF(self.preInd.CifLoc) # Get the variable symQ for symmetry of quaternions
+        self.SymQ = sy.get_proper_quaternions_from_CIF(self.preInd.phaseList[0].CifLoc) # Get the variable symQ for symmetry of quaternions
         
         # Storage folder creation
         ti = time.strftime("%Y-%m-%d__%Hh-%Mm-%Ss") # Absolute time 
@@ -366,7 +367,13 @@ class MainWindow(uiclass, baseclass):
             self.BatchDatabase_value = self.Database_SpinBox.value() # Number of theoretical profiles per batch
             
             # Indexation preparation
-            self.indexation = indGPU.IndexationGPUderiv(self,self.preInd.Stack, self.PathDir, self.preInd.DatabaseLoc, self.preInd.CifLoc, Workflow = Workflow, normType = "centered euclidian", nbSTACK=self.BatchProfiles_value, nbDB = self.BatchDatabase_value)
+            # self.indexation = indGPU.IndexationGPUderiv(self,self.preInd.Stack, self.PathDir, self.preInd.DatabaseLoc, self.preInd.CifLoc, Workflow = Workflow, normType = "centered euclidian", nbSTACK=self.BatchProfiles_value, nbDB = self.BatchDatabase_value)
+            self.indexation = indGPU.IndexationGPUderiv(self,self.preInd.Stack, 
+                                                        self.PathDir, self.preInd.phaseList[0].DatabaseLoc, 
+                                                        self.preInd.phaseList[0].CifLoc, 
+                                                        Workflow = Workflow, 
+                                                        normType = "centered euclidian", nbSTACK=self.BatchProfiles_value,
+                                                        nbDB = self.BatchDatabase_value)
             # Run indexation matching step
             self.indexation.runIndexation()
             
@@ -481,7 +488,13 @@ class MainWindow(uiclass, baseclass):
             self.BatchDatabase_value = self.Database_SpinBox.value() # Number of theoretical profiles per batch
             
             # Indexation preparation
-            self.indexation = indGPU.IndexationGPUderiv(self,self.preInd.Stack, self.PathDir, self.preInd.DatabaseLoc, self.preInd.CifLoc, Workflow = Workflow, normType = "centered euclidian", nbSTACK=self.BatchProfiles_value, nbDB = self.BatchDatabase_value)
+            # self.indexation = indGPU.IndexationGPUderiv(self,self.preInd.Stack, self.PathDir, self.preInd.DatabaseLoc, self.preInd.CifLoc, Workflow = Workflow, normType = "centered euclidian", nbSTACK=self.BatchProfiles_value, nbDB = self.BatchDatabase_value)
+            self.indexation = indGPU.IndexationGPUderiv(self,self.preInd.Stack, 
+                                                        self.PathDir, self.preInd.phaseList[0].DatabaseLoc, 
+                                                        self.preInd.phaseList[0].CifLoc, 
+                                                        Workflow = Workflow, 
+                                                        normType = "centered euclidian", nbSTACK=self.BatchProfiles_value,
+                                                        nbDB = self.BatchDatabase_value)
             # Run indexation matching step
             self.indexation.runIndexation()
             
