@@ -616,11 +616,14 @@ class preIndexation:
     
     Ces infos figurent comme attributs de la classe preIndexation.
     """
-    def __init__(self):
+    def __init__(self, parent):
         # Icons sizes management for pop-up windows (QMessageBox)
         self.pixmap = QPixmap("icons/Main_icon.png")
         self.pixmap = self.pixmap.scaled(100, 100)
         
+        self.phaseList = []
+        
+        # Profile stack loading
         self.StackLoc, self.StackDir = gf.getFilePathDialog("série d'images à indexer (*.tiff)")
         checkimage = tf.TiffFile(self.StackLoc[0]).asarray() # Check for dimension. If 2 dimensions : 2D array. If 3 dimensions : stack of images
  
@@ -636,8 +639,10 @@ class preIndexation:
         # filepath, self.DatabaseDir = gf.getFilePathDialog('theoretical test profiles (*.crddb)')
         # self.DatabaseLoc = filepath[0]
         
-        phase = phaseObject()
-        self.phaseList = [phase]
+        # Databases loading     
+        for i in range(parent.nPhases):
+            phase = phaseObject()
+            self.phaseList.append(phase)
         
 
     def popup_message(self,title,text,icon):

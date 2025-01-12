@@ -150,9 +150,8 @@ class MainWindow(uiclass, baseclass):
         self.phaseNumGUI.exec_()
         
         print(f"test phase num from class : {self.nPhases}")
-        self.phasesLoad.exec_()  # Affiche la fenêtre secondaire en mode modale
         
-        self.preInd = indGPU.preIndexation() # Ask to open the three files
+        self.preInd = indGPU.preIndexation(self) # Ask to open the three files
         
         # Creation of self.Current_stack to be use elsewhere
         self.Current_stack = self.preInd.Stack # Extract the stack of images
