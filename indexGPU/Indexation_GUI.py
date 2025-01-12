@@ -27,6 +27,7 @@ import indexGPU.Xallo as xa
 import indexGPU.Indexation_lib as indGPU
 from indexGPU import Compute_IPF as IPF_computation
 from indexGPU import Symetry as sy
+from indexGPU import phaseGUI_classes as phaseClass
 
 from pyquaternion import Quaternion
 
@@ -144,6 +145,13 @@ class MainWindow(uiclass, baseclass):
         
     def loaddata(self): # Allow to load the image serie, the CIF file and the database
         self.Info_box.clear() # Clear the information box
+        self.nPhases = 1
+        self.phaseNumGUI = phaseClass.phaseNum(self)
+        self.phaseNumGUI.exec_()
+        
+        print(f"test phase num from class : {self.nPhases}")
+        self.phasesLoad.exec_()  # Affiche la fenêtre secondaire en mode modale
+        
         self.preInd = indGPU.preIndexation() # Ask to open the three files
         
         # Creation of self.Current_stack to be use elsewhere
