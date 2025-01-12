@@ -2,21 +2,51 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLineEdit, QCheckBox, QSpinBox, QGroupBox, QTextEdit, QHBoxLayout, QVBoxLayout, QDialog, QRadioButton, QFileDialog, QLabel
 from PyQt5.QtCore import Qt, QTimer, QSize
 
+class phaseNum(QDialog):
+    def __init__(self, parent):
+        super().__init__()
+        self.setWindowTitle("phaseNum dialog")
+        self.parent = parent
+
+        layout = QVBoxLayout()
+
+        # QSpinBox for phase number
+        self.nPhases = QSpinBox()
+        self.nPhases.setRange(1, 5)  # range from 0 to 100
+        self.nPhases.setValue(1)  # Initial value
+        
+        self.nPhases_titre = QLabel(f"Enter phase number :")
+        
+        self.ok_button = QPushButton("Validate")
+        
+        # layout addition
+        layout.addWidget(self.nPhases_titre)
+        layout.addWidget(self.nPhases)
+        layout.addWidget(self.ok_button)
+
+        self.nPhases.valueChanged.connect(self.update_SpinBox_value)
+        self.ok_button.clicked.connect(self.close)
+        
+        self.setLayout(layout)
+        
+    def update_SpinBox_value(self):
+        
+        self.parent.nPhases = self.nPhases.value()
+    
+
+
 class phaseIndexParam(QDialog):
     def __init__(self, parent):
         super().__init__()
         self.setWindowTitle("Indexation parameters")
         self.parent = parent
-       
-        self.initial_size = None
         
         layout = QVBoxLayout()
         
         self.groupBoxNPROF = QGroupBox("Database subsampling")
         self.NPROFlayout = QVBoxLayout()
         self.DBnb = QLineEdit("# DB profiles to be considered")
-        self.DBnb.textChanged.connect(self.DB_Size)
-        
+                
         self.NPROFlayout.addWidget(self.DBnb)
         self.groupBoxNPROF.setLayout((self.NPROFlayout))
         
@@ -33,7 +63,7 @@ class phaseIndexParam(QDialog):
         self.checkboxSG = QCheckBox("Savitzky-Golay differentiation ?")
         self.checkboxSG.setChecked(False)
         self.checkboxSG.setVisible(True)
-        self.checkboxSG.stateChanged.connect(self.savgolParam)
+        
         
         self.Diff_layout.addWidget(self.diffInd)
         self.Diff_layout.addWidget(self.counterDiff)
@@ -68,20 +98,41 @@ class phaseIndexParam(QDialog):
         
         self.SG_layout.addLayout(self.SGwin_layout)
         self.SG_layout.addLayout(self.SGpoly_layout)
-        
         self.groupboxSG.setLayout(self.SG_layout)    
+        
+        self.ok_button = QPushButton("Validate")
         
         layout.addWidget(self.groupBoxNPROF)
         layout.addWidget(self.groupboxDiff)
         layout.addWidget(self.groupboxSG)
+        layout.addWidget(self.ok_button)      
+        
 
         self.setLayout(layout)
         
-        self.initial_size = self.sizeHint()
+        # connections
+        self.DBnb.textChanged.connect(self.DB_Size)
+        self.checkboxSG.stateChanged.connect(self.savgolParam)
+        
+        self.counterDiff.valueChanged.connect(self.SpinBox_changed)
+        self.counterSGwin.valueChanged.connect(self.SpinBox_changed)
+        self.counterSGpoly.valueChanged.connect(self.SpinBox_changed)
+        
+        self.ok_button.clicked.connect(self.close)
+        
+    def SpinBox_changed(self):
+        sender = self.sender()
+        if sender == self.counterDiff:
+            self.parent.diff = self.counterDiff.value()
+        elif sender == self.counterSGwin:
+            self.parent.SG_win = self.counterSGwin.value()
+        else:
+            self.parent.SG_poly = self.counterSGpoly.value()
+        
     
     def DB_Size(self, text):
         self.database_size = int(text)
-        print(self.database_size)
+        self.parent.DB_Size = self.database_size
    
     def savgolParam(self):
         if self.groupboxSG.isVisible():
@@ -90,59 +141,23 @@ class phaseIndexParam(QDialog):
         else:
             self.groupboxSG.setVisible(True)
             self.adjustSize()
-
-
-class phaseNum(QDialog):
-    def __init__(self, parent):
-        super().__init__()
-        self.setWindowTitle("phaseNum dialog")
-        self.parent = parent
-
-        layout = QVBoxLayout()
-
-        # QSpinBox for phase number
-        self.nPhases = QSpinBox()
-        self.nPhases.setRange(1, 5)  # range from 0 to 100
-        self.nPhases.setValue(1)  # Initial value
-        
-        self.nPhases_titre = QLabel(f"Enter phase number :")
-        
-        self.ok_button = QPushButton("Validate")
-        
-        # layout addition
-        layout.addWidget(self.nPhases_titre)
-        layout.addWidget(self.nPhases)
-        layout.addWidget(self.ok_button)
-
-        self.nPhases.valueChanged.connect(self.update_SpinBox_value)
-        self.ok_button.clicked.connect(self.close)
-        
-        self.setLayout(layout)
-        
-    def update_SpinBox_value(self):
-        
-        self.parent.nPhases = self.nPhases.value()
-    
+        self.parent.SG = self.checkboxSG.isChecked()
         
 class phasesLoading(QDialog):
     def __init__(self, parent):
         super().__init__()
         self.setWindowTitle("Fenêtre secondaire")
         self.parent = parent
-        # Layout de la fenêtre secondaire
+        
+        # Data to be gathered
+        
+        self.DB_Size = 1
+        self.SG = False
+        self.diff = 0
+        self.SG_win = 3
+        self.SG_poly = 2
+        
         layout = QVBoxLayout()
-        
-        # # Création des boutons radio
-        # self.KAD = QRadioButton("KAD grain segmentation")
-        # self.KMeans = QRadioButton("KMeans clustering")
-        # self.Otsu = QRadioButton("Otsu phase segmentation")
-        # self.KAD.setChecked(True)  # Option 1 sélectionnée par défaut
-        
-        # layout.addWidget(self.KAD)
-        # layout.addWidget(self.KMeans)
-        # layout.addWidget(self.Otsu)
-        
-        
         
         # Bouton pour ouvrir un fichier
         self.openButton = QPushButton("Open phase files")
@@ -166,13 +181,8 @@ class phasesLoading(QDialog):
         
         self.setLayout(layout)
         
-
     def update_SpinBox_value(self):
-        
-        # Mettre à jour le label avec la valeur actuelle du slider
-        self.nPhases_label.setText(f"Valeur du slider : {self.nPhases.value()}")
         self.parent.nPhases = self.nPhases.value()
-        self.parent.nPhases_label.setText(f"nPhases : {self.nPhases.value()}")
 
     def open_file(self):
         # Dialogue pour ouvrir un fichier
@@ -192,9 +202,14 @@ class phasesLoading(QDialog):
                 self.parent.text_edit.append(CIF_path + '\n')
                 self.parent.text_edit.append(DB_path + '\n')
                 self.parent.text_edit.append('\n')
-        
+            
             self.phasesIndex = phaseIndexParam(self)
             self.phasesIndex.exec_()  # Affiche la fenêtre secondaire en mode modale
+            print(f"phaseLoading.DB_Size : {self.DB_Size}")
+            print(f"phaseLoading.SG : {self.SG}")
+            print(f"phaseLoading.diff : {self.diff}")
+            print(f"phaseLoading.SG_win : {self.SG_win}")
+            print(f"phaseLoading.SG_poly : {self.SG_poly}")
             
             
 

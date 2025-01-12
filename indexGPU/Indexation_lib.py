@@ -6,6 +6,7 @@ Created on Wed Feb  1 20:53:26 2023
 """
 import indexGPU.Xallo as xa
 from indexGPU import Symetry as sy
+from indexGPU import phaseGUI_classes as phaseClass
 from inichord import Profile_Modification as fct
 from inichord import General_Functions as gf
 from PyQt5.QtWidgets import QApplication
@@ -586,27 +587,38 @@ class phaseObject:
         
     #     self.savgol = savgol
     
-    def __init__(self, nProf = 2_000_000, diff = 0, savgol = False, window = 3, poly = 2):
-        
-        
+    def __init__(self):
+                
         #Stockage CIF
         filepath,  self.CifDir = gf.getFilePathDialog('CIF selection')
         self.CifLoc = filepath[0]
         #Stockage DB
         filepath, self.DatabaseDir = gf.getFilePathDialog('theoretical test profiles (*.crddb)')
         self.DatabaseLoc = filepath[0]
+        
+        self.DB_Size = 2_000_000
+        self.SG = False
+        self.diff = 0
+        self.SG_win = 3
+        self.SG_poly = 2
+
+        self.phaseIndex = phaseClass.phaseIndexParam(self)
+        self.phaseIndex.exec_()
+        
         #Creation workflow
-        if savgol:
-            Op = ['Diff', diff, window, poly]
+        if self.SG:
+            Op = ['Diff', self.diff, self.SG_win, self.SG_poly]
         else:
-            Op = ['Diff', diff]
+            Op = ['Diff', self.diff]
             
         self.Workflow = [Op]
-        #Choix taille DB
-        self.sizeDB = nProf
         
-        self.savgol = savgol
-
+        print(f"phaseLoading.DB_Size : {self.DB_Size}")
+        print(f"phaseLoading.SG : {self.SG}")
+        print(f"phaseLoading.diff : {self.diff}")
+        print(f"phaseLoading.SG_win : {self.SG_win}")
+        print(f"phaseLoading.SG_poly : {self.SG_poly}")
+        
 class preIndexation:
     """
     Classe permettant d'entrer en mémoire la stack à indexer, ainsi que le 
