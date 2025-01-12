@@ -107,11 +107,15 @@ class phaseNum(QDialog):
         
         self.nPhases_titre = QLabel(f"Enter phase number :")
         
+        self.ok_button = QPushButton("Validate")
+        
         # layout addition
         layout.addWidget(self.nPhases_titre)
         layout.addWidget(self.nPhases)
+        layout.addWidget(self.ok_button)
 
         self.nPhases.valueChanged.connect(self.update_SpinBox_value)
+        self.ok_button.clicked.connect(self.close)
         
         self.setLayout(layout)
         
