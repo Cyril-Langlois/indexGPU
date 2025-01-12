@@ -95,7 +95,7 @@ class phaseIndexParam(QDialog):
 class phaseNum(QDialog):
     def __init__(self, parent):
         super().__init__()
-        self.setWindowTitle("Fenêtre secondaire")
+        self.setWindowTitle("phaseNum dialog")
         self.parent = parent
 
         layout = QVBoxLayout()
