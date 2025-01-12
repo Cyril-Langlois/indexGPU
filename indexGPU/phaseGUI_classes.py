@@ -2,6 +2,8 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLineEdit, QCheckBox, QSpinBox, QGroupBox, QTextEdit, QHBoxLayout, QVBoxLayout, QDialog, QRadioButton, QFileDialog, QLabel
 from PyQt5.QtCore import Qt, QTimer, QSize
 
+##############################  the following classes are used for indexation  ##########################################
+
 class phaseNum(QDialog):
     def __init__(self, parent):
         super().__init__()
@@ -33,8 +35,6 @@ class phaseNum(QDialog):
         
         self.parent.nPhases = self.nPhases.value()
     
-
-
 class phaseIndexParam(QDialog):
     def __init__(self, parent):
         super().__init__()
@@ -142,6 +142,9 @@ class phaseIndexParam(QDialog):
             self.groupboxSG.setVisible(True)
             self.adjustSize()
         self.parent.SG = self.checkboxSG.isChecked()
+
+
+##############################  the following classes are used for testing the above classes ##########################################
         
 class phasesLoading(QDialog):
     def __init__(self, parent):
@@ -211,8 +214,6 @@ class phasesLoading(QDialog):
             print(f"phaseLoading.SG_win : {self.SG_win}")
             print(f"phaseLoading.SG_poly : {self.SG_poly}")
             
-            
-
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()

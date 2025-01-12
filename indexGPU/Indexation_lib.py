@@ -568,24 +568,6 @@ class phaseObject:
     """
     Classe permettant de stocker les chemins des fichiers CIF et DB, le workflow correspondant et la taille de la DB.
     """
-    # def __init__(self, nProf = 2_000_000, diff = 0, savgol = False, window = 3, poly = 2):
-    #     #Stockage CIF
-    #     filepath,  self.CifDir = gf.getFilePathDialog('CIF selection')
-    #     self.CifLoc = filepath[0]
-    #     #Stockage DB
-    #     filepath, self.DatabaseDir = gf.getFilePathDialog('theoretical test profiles (*.crddb)')
-    #     self.DatabaseLoc = filepath[0]
-    #     #Creation workflow
-    #     if savgol:
-    #         Op = ['Diff', diff, window, poly]
-    #     else:
-    #         Op = ['Diff', diff]
-            
-    #     self.Workflow = [Op]
-    #     #Choix taille DB
-    #     self.sizeDB = nProf
-        
-    #     self.savgol = savgol
     
     def __init__(self):
                 
@@ -596,12 +578,14 @@ class phaseObject:
         filepath, self.DatabaseDir = gf.getFilePathDialog('theoretical test profiles (*.crddb)')
         self.DatabaseLoc = filepath[0]
         
+        # Initialization
         self.DB_Size = 2_000_000
         self.SG = False
         self.diff = 0
         self.SG_win = 3
         self.SG_poly = 2
 
+        # User interaction to load indexation parameters
         self.phaseIndex = phaseClass.phaseIndexParam(self)
         self.phaseIndex.exec_()
         
@@ -613,11 +597,11 @@ class phaseObject:
             
         self.Workflow = [Op]
         
-        print(f"phaseLoading.DB_Size : {self.DB_Size}")
-        print(f"phaseLoading.SG : {self.SG}")
-        print(f"phaseLoading.diff : {self.diff}")
-        print(f"phaseLoading.SG_win : {self.SG_win}")
-        print(f"phaseLoading.SG_poly : {self.SG_poly}")
+        # print(f"phaseLoading.DB_Size : {self.DB_Size}")
+        # print(f"phaseLoading.SG : {self.SG}")
+        # print(f"phaseLoading.diff : {self.diff}")
+        # print(f"phaseLoading.SG_win : {self.SG_win}")
+        # print(f"phaseLoading.SG_poly : {self.SG_poly}")
         
 class preIndexation:
     """
@@ -645,18 +629,11 @@ class preIndexation:
         else:
             self.Stack = tf.TiffFile(self.StackLoc[0]).asarray()
 
-        # filepath,  self.CifDir = gf.getFilePathDialog('CIF selection')
-        # self.CifLoc = filepath[0]
-        
-        # filepath, self.DatabaseDir = gf.getFilePathDialog('theoretical test profiles (*.crddb)')
-        # self.DatabaseLoc = filepath[0]
-        
         # Databases loading     
         for i in range(parent.nPhases):
             phase = phaseObject()
             self.phaseList.append(phase)
         
-
     def popup_message(self,title,text,icon):
         msg = QMessageBox()
         msg.setIconPixmap(self.pixmap)
