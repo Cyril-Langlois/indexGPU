@@ -189,9 +189,13 @@ class MainWindow(uiclass, baseclass):
 
     def handle_item_tree(self):
         selected_items = self.treeWidget.selectedItems()
+        print('je passe ici')
         if selected_items:
+            print('je passe la')
             item = selected_items[0]
+            print(item)
             item_text = item.text(0)
+            print(item_text)
 
             if item_text == "Raw indexation (SP)":
                 self.Cluster_index.setChecked(False)

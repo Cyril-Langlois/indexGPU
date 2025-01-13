@@ -5,7 +5,7 @@ setup(
     version='0.1.22',
     packages=find_packages(),
     install_requires=[
-        "inichord >= 0.1.14",
+        "inichord >= 0.1.15",
 		"cupy-cuda12x >= 13.3.0",
 		"orix >= 0.11",
 		"Dans-Diffraction >=3.2",
