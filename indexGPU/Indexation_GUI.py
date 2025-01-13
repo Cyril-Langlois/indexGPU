@@ -81,6 +81,9 @@ class MainWindow(uiclass, baseclass):
         self.progressBar.setVisible(False) # The progress bar is hidden for clarity
         self.mouseLock.setVisible(False)
         
+        self.Cluster_index.setVisible(False) # Hide cluster choice 
+        self.label_phases.setVisible(False) # Hide label phasemap
+        
         self.window_SpinBox.setVisible(False) # Hide window length for savgol
         self.poly_SpinBox.setVisible(False) # Hide order for savgol
         
@@ -188,13 +191,9 @@ class MainWindow(uiclass, baseclass):
 
     def handle_item_tree(self):
         selected_items = self.treeWidget.selectedItems()
-        print('je passe ici')
         if selected_items:
-            print('je passe la')
             item = selected_items[0]
-            print(item)
             item_text = item.text(0)
-            print(item_text)
 
             if item_text == "Raw indexation (SP)":
                 self.Cluster_index.setChecked(False)
@@ -206,6 +205,26 @@ class MainWindow(uiclass, baseclass):
                 self.Info_box.ensureCursorVisible()
                 self.Info_box.insertPlainText("\n \u2022 Label based indexation on single phase.")
                 QApplication.processEvents()
+            elif item_text == "Raw indexation (ZA)":
+                self.Cluster_index.setChecked(False)
+                self.Info_box.ensureCursorVisible()
+                self.Info_box.insertPlainText("\n \u2022 Z-Multiphase : raw indexation.")
+                QApplication.processEvents()
+            elif item_text == "Indexation from label (ZA)":
+                self.Cluster_index.setChecked(True)
+                self.Info_box.ensureCursorVisible()
+                self.Info_box.insertPlainText("\n \u2022 Z-Multiphase : label based indexation.")
+                QApplication.processEvents()
+            elif item_text == "Raw indexation (PA)":
+                self.Cluster_index.setChecked(False)
+                self.Info_box.ensureCursorVisible()
+                self.Info_box.insertPlainText("\n \u2022 Phase-Multiphase : raw indexation.")
+                QApplication.processEvents()            
+            elif item_text == "Indexation from label (PA)":
+                self.Cluster_index.setChecked(True)
+                self.Info_box.ensureCursorVisible()
+                self.Info_box.insertPlainText("\n \u2022 Phase-Multiphase : label based indexation.")
+                QApplication.processEvents()                 
             else :
                 self.Info_box.ensureCursorVisible()
                 self.Info_box.insertPlainText("\n \u2022 Not a method.")
@@ -979,4 +998,13 @@ class MainWindow(uiclass, baseclass):
         self.IPF_serie.ui.menuBtn.hide()
         
         view = self.IPF_serie.getView()
+        view.setBackgroundColor(self.parent.color1)
+        
+        # Phase map
+        self.PhaseMap.clear()
+        self.PhaseMap.ui.histogram.hide()
+        self.PhaseMap.ui.roiBtn.hide()
+        self.PhaseMap.ui.menuBtn.hide()
+        
+        view = self.PhaseMap.getView()
         view.setBackgroundColor(self.parent.color1)

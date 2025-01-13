@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1190</width>
-    <height>774</height>
+    <width>1052</width>
+    <height>749</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -169,92 +169,102 @@ QTreeWidget::item:hover {
 QTreeWidget::item:selected {
     background-color: rgb(226, 120, 95,150); /* Changez cette couleur selon vos besoins */
     color: black; /* Changez cette couleur selon vos besoins */
+}
+
+QHeaderView::section {
+	font : 12pt &quot;Noto Sans Cond&quot;;;
+	background-color: rgb(253, 249, 248);
+	border: none;
 }</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout_3">
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_5">
-      <item>
-       <layout class="QVBoxLayout" name="verticalLayout">
+     <widget class="QSplitter" name="splitter_5">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <widget class="QTreeWidget" name="treeWidget">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true"/>
+       </property>
+       <column>
+        <property name="text">
+         <string>Indexation methods</string>
+        </property>
+        <property name="font">
+         <font>
+          <family>Noto Sans Cond</family>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="background">
+         <color>
+          <red>255</red>
+          <green>255</green>
+          <blue>255</blue>
+         </color>
+        </property>
+       </column>
+       <item>
+        <property name="text">
+         <string>Single phase</string>
+        </property>
         <item>
-         <widget class="QTreeWidget" name="treeWidget">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <column>
-           <property name="text">
-            <string>Indexation methods</string>
-           </property>
-           <property name="font">
-            <font>
-             <family>Noto Sans Cond</family>
-             <pointsize>12</pointsize>
-            </font>
-           </property>
-           <property name="background">
-            <color>
-             <red>255</red>
-             <green>255</green>
-             <blue>255</blue>
-            </color>
-           </property>
-          </column>
-          <item>
-           <property name="text">
-            <string>Single phase</string>
-           </property>
-           <item>
-            <property name="text">
-             <string>Raw indexation (SP)</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Indexation from label (SP)</string>
-            </property>
-           </item>
-          </item>
-          <item>
-           <property name="text">
-            <string>Multiphase</string>
-           </property>
-           <item>
-            <property name="text">
-             <string>Z-contrast approach</string>
-            </property>
-            <item>
-             <property name="text">
-              <string>Raw indexation (ZA)</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Indexation from label (ZA)</string>
-             </property>
-            </item>
-           </item>
-           <item>
-            <property name="text">
-             <string>Phase contrast approach</string>
-            </property>
-            <item>
-             <property name="text">
-              <string>Raw indexation (PA)</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Indexation from label (PA)</string>
-             </property>
-            </item>
-           </item>
-          </item>
-         </widget>
+         <property name="text">
+          <string>Raw indexation (SP)</string>
+         </property>
         </item>
+        <item>
+         <property name="text">
+          <string>Indexation from label (SP)</string>
+         </property>
+        </item>
+       </item>
+       <item>
+        <property name="text">
+         <string>Multiphase</string>
+        </property>
+        <item>
+         <property name="text">
+          <string>Z-contrast approach</string>
+         </property>
+         <item>
+          <property name="text">
+           <string>Raw indexation (ZA)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Indexation from label (ZA)</string>
+          </property>
+         </item>
+        </item>
+        <item>
+         <property name="text">
+          <string>Phase contrast approach</string>
+         </property>
+         <item>
+          <property name="text">
+           <string>Raw indexation (PA)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Indexation from label (PA)</string>
+          </property>
+         </item>
+        </item>
+       </item>
+      </widget>
+      <widget class="QWidget" name="layoutWidget_5">
+       <layout class="QVBoxLayout" name="verticalLayout">
         <item>
          <widget class="QPushButton" name="Open_data">
           <property name="sizePolicy">
@@ -507,7 +517,7 @@ QTreeWidget::item:selected {
             </layout>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_6">
+            <layout class="QHBoxLayout" name="horizontalLayout_10">
              <item>
               <widget class="QLabel" name="savgol_label1">
                <property name="sizePolicy">
@@ -582,7 +592,7 @@ QTreeWidget::item:selected {
             </layout>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_7">
+            <layout class="QHBoxLayout" name="horizontalLayout_11">
              <item>
               <widget class="QLabel" name="savgol_label2">
                <property name="sizePolicy">
@@ -727,7 +737,7 @@ QTreeWidget::item:selected {
           <property name="title">
            <string>Save and informations</string>
           </property>
-          <layout class="QVBoxLayout" name="verticalLayout_12">
+          <layout class="QVBoxLayout" name="verticalLayout_14">
            <item>
             <widget class="QPushButton" name="Save_bttn">
              <property name="text">
@@ -949,7 +959,11 @@ QTreeWidget::item:selected {
          </widget>
         </item>
        </layout>
-      </item>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_5">
       <item>
        <widget class="QSplitter" name="splitter_4">
         <property name="orientation">
@@ -2663,7 +2677,7 @@ QTreeWidget::item:selected {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1190</width>
+     <width>1052</width>
      <height>20</height>
     </rect>
    </property>
