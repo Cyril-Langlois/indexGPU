@@ -146,7 +146,7 @@ class MainWindow(uiclass, baseclass):
     def loaddata(self): # Allow to load the image serie, the CIF file and the database
         self.Info_box.clear() # Clear the information box
         
-        self.treeWidget.itemSelectionChanged.connect(self.handle_item_tree)
+        self.handle_item_tree() # Va regarder dans quel cas on est 
         
         self.nPhases = 1
         self.phaseNumGUI = phaseClass.phaseNum(self)
@@ -187,7 +187,7 @@ class MainWindow(uiclass, baseclass):
         self.Info_box.insertPlainText("\n \u2022 Data have been loaded.")
         QApplication.processEvents()
 
-    def handle_item_tree(self, item, column):
+    def handle_item_tree(self):
         selected_items = self.treeWidget.selectedItems()
         if selected_items:
             item = selected_items[0]
