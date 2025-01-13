@@ -32,7 +32,7 @@ from indexGPU import phaseGUI_classes as phaseClass
 from pyquaternion import Quaternion
 
 path2thisFile = abspath(getsourcefile(lambda:0))
-uiclass, baseclass = pg.Qt.loadUiType(os.path.dirname(path2thisFile) + "/Indexation_GUI.ui")
+uiclass, baseclass = pg.Qt.loadUiType(os.path.dirname(path2thisFile) + "/Indexation_GUI_tempo.ui")
 
 class MainWindow(uiclass, baseclass):
     def __init__(self, parent):
@@ -145,6 +145,9 @@ class MainWindow(uiclass, baseclass):
         
     def loaddata(self): # Allow to load the image serie, the CIF file and the database
         self.Info_box.clear() # Clear the information box
+        
+        self.treeWidget.itemSelectionChanged.connect(self.handle_item_tree)
+        
         self.nPhases = 1
         self.phaseNumGUI = phaseClass.phaseNum(self)
         self.phaseNumGUI.exec_()
@@ -183,6 +186,28 @@ class MainWindow(uiclass, baseclass):
         self.Info_box.ensureCursorVisible()
         self.Info_box.insertPlainText("\n \u2022 Data have been loaded.")
         QApplication.processEvents()
+
+    def handle_item_tree(self, item, column):
+        selected_items = self.treeWidget.selectedItems()
+        if selected_items:
+            item = selected_items[0]
+            item_text = item.text(0)
+
+            if item_text == "Raw indexation (SP)":
+                self.Cluster_index.setChecked(False)
+                self.Info_box.ensureCursorVisible()
+                self.Info_box.insertPlainText("\n \u2022 Raw indexation on single phase.")
+                QApplication.processEvents()
+            elif item_text == "Indexation from label (SP)":
+                self.Cluster_index.setChecked(True)
+                self.Info_box.ensureCursorVisible()
+                self.Info_box.insertPlainText("\n \u2022 Label based indexation on single phase.")
+                QApplication.processEvents()
+            else :
+                self.Info_box.ensureCursorVisible()
+                self.Info_box.insertPlainText("\n \u2022 Not a method.")
+                QApplication.processEvents()
+                pass
 
     def Reload_data(self): # Reload the H5 file
         try:
