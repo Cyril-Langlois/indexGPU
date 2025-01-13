@@ -91,7 +91,7 @@ class MainWindow(uiclass, baseclass):
 
         self.TheoProfiles.stateChanged.connect(self.drawCHORDprofiles) # Allow the visualization of the theoretical profiles
         self.ModProfiles.stateChanged.connect(self.drawCHORDprofiles) # Allow the visualization of the profiles used for indexing
-        self.treeWidget.itemSelectionChanged.connect(self.handle_item_tree()) # Va regarder dans quel cas on est
+        self.treeWidget.itemSelectionChanged.connect(self.handle_item_tree # Va regarder dans quel cas on est
 
         app = QApplication.instance()
         screen = app.screenAt(self.pos())
