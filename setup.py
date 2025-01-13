@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='indexGPU',
-    version='0.1.21',
+    version='0.1.22',
     packages=find_packages(),
     install_requires=[
         "inichord >= 0.1.13",
@@ -11,7 +11,7 @@ setup(
 		"Dans-Diffraction >=3.2",
 		"pyquaternion >=0.9",
     ],
- 	data_files=[('Lib/site-packages/indexGPU', ['indexGPU/Indexation_GUI.ui']),
+ 	data_files=[('Lib/site-packages/indexGPU', ['indexGPU/Indexation_GUI.ui']),('Lib/site-packages/indexGPU', ['indexGPU/Indexation_GUI_tempo.ui']),
      ],
     
     # package_data={
