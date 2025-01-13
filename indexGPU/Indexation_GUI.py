@@ -83,6 +83,7 @@ class MainWindow(uiclass, baseclass):
         
         self.Cluster_index.setVisible(False) # Hide cluster choice 
         self.label_phases.setVisible(False) # Hide label phasemap
+        self.PhaseMap.setVisible(False) # Hide phase map
         
         self.window_SpinBox.setVisible(False) # Hide window length for savgol
         self.poly_SpinBox.setVisible(False) # Hide order for savgol
