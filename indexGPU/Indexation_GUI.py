@@ -91,7 +91,8 @@ class MainWindow(uiclass, baseclass):
 
         self.TheoProfiles.stateChanged.connect(self.drawCHORDprofiles) # Allow the visualization of the theoretical profiles
         self.ModProfiles.stateChanged.connect(self.drawCHORDprofiles) # Allow the visualization of the profiles used for indexing
-        
+        self.treeWidget.stateChanged.connect(self.handle_item_tree()) # Va regarder dans quel cas on est
+
         app = QApplication.instance()
         screen = app.screenAt(self.pos())
         geometry = screen.availableGeometry()
@@ -145,9 +146,7 @@ class MainWindow(uiclass, baseclass):
         
     def loaddata(self): # Allow to load the image serie, the CIF file and the database
         self.Info_box.clear() # Clear the information box
-        
-        self.handle_item_tree() # Va regarder dans quel cas on est 
-        
+    
         self.nPhases = 1
         self.phaseNumGUI = phaseClass.phaseNum(self)
         self.phaseNumGUI.exec_()
