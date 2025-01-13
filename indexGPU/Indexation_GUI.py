@@ -211,6 +211,9 @@ class MainWindow(uiclass, baseclass):
                 self.Info_box.insertPlainText("\n \u2022 Not a method.")
                 QApplication.processEvents()
                 pass
+            
+        else:
+            pass
 
     def Reload_data(self): # Reload the H5 file
         try:
