@@ -290,7 +290,8 @@ class IndexationGPUderiv:
                     normedGPU = cp.array(self.listChunkArraysDiff[j][k*self.dbChunks:(k+1)*self.dbChunks, :])
 
                     # calcul du tableau de distances
-                    distances = cp.matmul(normedGPU, normedGPUtest)
+                    # distances = cp.matmul(normedGPU, normedGPUtest)
+                    distances = NCC_computation(normedGPU, normedGPUtest, batchsize = 5000, Windows = 12)
                     del normedGPU
 
                     self.mempool.free_all_blocks()
