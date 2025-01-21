@@ -133,6 +133,7 @@ class phaseForm(uiclass, baseclass):
             self.showMsgBox()
         else :
             for i in range (self.nbPhase):
+                #MAJ des attributs d'une phase i
                 self.list_phase[i].CifLoc = self.list_CIF[i]
                 self.list_phase[i].DatabaseLoc = self.list_DB[i]
                 self.list_phase[i].DB_Size = self.list_DB_size[i]
@@ -140,15 +141,10 @@ class phaseForm(uiclass, baseclass):
                 self.list_phase[i].SG = self.list_SG[i]
                 self.list_phase[i].SG_poly = self.list_poly[i]
                 self.list_phase[i].SG_win = self.list_window[i]
-                self.list_phase[i].workflowCreation() #sans .workflow
-            print("CifLoc :" , self.list_phase[0].CifLoc)
-            print("DatabaseLoc :" , self.list_phase[0].DatabaseLoc)
-            print("DB_size :" , self.list_phase[0].DB_Size)
-            print("diff :" , self.list_phase[0].diff)
-            print("SG :" , self.list_phase[0].SG)
-            print("SG_poly :" , self.list_phase[0].SG_poly)
-            print("SG_win :" , self.list_phase[0].SG_win)
-            print("Workflow :" , self.list_phase[0].Workflow)
+                self.list_phase[i].workflowCreation()
+                #ajout de la phase i dans la liste de phases parente
+                self.parent.phaseList.append(self.list_phase[i])
+            print("CifLoc :" , self.parent.phaseList[0].CifLoc)
 
             self.close()
     
