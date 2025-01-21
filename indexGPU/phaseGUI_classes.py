@@ -8,6 +8,9 @@ from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLineEdit, QChec
 from PyQt5.QtCore import Qt, QTimer, QSize
 #from indexGPU import Indexation_lib as il
 import indexGPU.Indexation_lib as il
+from inichord import General_Functions as gf 
+import numpy as np
+import tifffile as tf
 ##############################  the following classes are used for indexation  ##########################################
 path2thisFile = abspath(getsourcefile(lambda:0))
 uiclass, baseclass = pg.Qt.loadUiType(os.path.dirname(path2thisFile) + "/phase_form_tempo.ui")
@@ -18,7 +21,7 @@ class phaseForm(uiclass, baseclass):
         self.setWindowTitle("Phases parameters")
         self.setupUi(self)
         self.parent = parent
-        
+
         
         #VARIABLES DE STOCKAGE
        
@@ -31,10 +34,12 @@ class phaseForm(uiclass, baseclass):
         self.list_SG = [False]*self.nbPhase
         self.list_poly = [2]*self.nbPhase
         self.list_window = [3]*self.nbPhase
-        
+        self.otsu = True
         
         #SETTINGS FENETRE
         self.gB_SG.setVisible(False) #Savgol non visible par défaut
+        
+        self.label_bbtn.setVisible(False) #Bouton chargement otsu non visible par défaut
  
         if self.nbPhase == 1 : #Gestion des boutons previous et next
             self.previous_button.setVisible(False)
@@ -45,6 +50,11 @@ class phaseForm(uiclass, baseclass):
         #         self.list_pages.append(QWidget())
         #         self.stackedW.addWidget(self.list_pages[i])
         #         self.stackedWSettings(i)
+        
+        if self.otsu :
+            self.label_bbtn.setVisible(True)
+
+            
  
  
         #CONNEXIONS
@@ -60,10 +70,37 @@ class phaseForm(uiclass, baseclass):
         self.spinBox_diff.valueChanged.connect(self.SpinBox_changed)
         self.spinBox_window.valueChanged.connect(self.SpinBox_changed)
         self.spinBox_poly.valueChanged.connect(self.SpinBox_changed)
+        self.label_bbtn.clicked.connect(self.importLabel)
        
         
     #METHODES    
         
+    def importLabel(self): 
+        # self.defaultIV() 
+        options = QFileDialog.Options()
+        #self.StackLoc, self.StackDir = gf.getFilePathDialog("Open map (*.tiff)")
+        path, _ = QFileDialog.getOpenFileName(self, f"Select a map :", "", "Tous les fichiers (*.tiff)", options=options)
+        
+        self.label_map = tf.TiffFile(path).asarray()
+        self.label_map = np.flip(self.label_map, 0)
+        self.label_map = np.rot90(self.label_map, k=1, axes=(1, 0))
+        self.otsuListCreation()
+        self.displaylabels(self.thresholded_maps[0])
+        self.label_title.setText("Phase n°: 0")
+        
+    def otsuListCreation (self):
+        thresholds = []
+        
+        for i in range(0,self.nbPhase):
+            var = i
+            thresholds.append(i)
+        
+        self.thresholded_maps = []
+        for threshold in thresholds:
+            thresholded_map = np.where(self.label_map == threshold,1,0)
+            self.thresholded_maps.append(thresholded_map)
+
+    
     def SpinBox_changed(self):
         i = self.stackedW.currentIndex()
         sender = self.sender()
@@ -108,6 +145,9 @@ class phaseForm(uiclass, baseclass):
         if self.next_button.isEnabled() == False:
             self.next_button.setEnabled(True)
             self.save_button.setEnabled(False)
+        if self.otsu :
+            self.displaylabels(self.thresholded_maps[prevIndex])
+            self.label_title.setText("Phase n°: " + str(prevIndex))
              
     def nextPage (self):
         nextIndex = self.stackedW.currentIndex() + 1
@@ -126,6 +166,9 @@ class phaseForm(uiclass, baseclass):
             self.save_button.setEnabled(True)
         if self.previous_button.isEnabled() == False:
             self.previous_button.setEnabled(True)
+        if self.otsu :
+            self.displaylabels(self.thresholded_maps[nextIndex])
+            self.label_title.setText("Phase n°: " + str(nextIndex))
         
     def saveClicked (self) :
         empty = self.list_CIF.count(None) + self.list_DB.count(None) + self.list_DB_size.count(None)
@@ -144,7 +187,6 @@ class phaseForm(uiclass, baseclass):
                 self.list_phase[i].workflowCreation()
                 #ajout de la phase i dans la liste de phases parente
                 self.parent.phaseList.append(self.list_phase[i])
-            print("CifLoc :" , self.parent.phaseList[0].CifLoc)
 
             self.close()
     
@@ -176,6 +218,19 @@ class phaseForm(uiclass, baseclass):
             self.text_DB_file.setText(path)
             self.list_DB[i] = path
             #self.text_DB_size = taille de la DB du fichier choisi
+    
+    def displaylabels(self, series): # Display of label map
+        self.LabelsSeries.ui.roiBtn.hide()
+        self.LabelsSeries.ui.menuBtn.hide()
+        
+        view = self.LabelsSeries.getView()
+        state = view.getState()        
+        self.LabelsSeries.setImage(series) 
+        view.setState(state)
+        
+        histplot = self.LabelsSeries.getHistogramWidget()
+        self.LabelsSeries.setColorMap(pg.colormap.get('viridis'))
+
     
 class phaseNum(QDialog):
     def __init__(self, parent):
