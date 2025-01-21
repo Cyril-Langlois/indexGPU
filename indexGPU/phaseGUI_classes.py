@@ -10,7 +10,7 @@ from PyQt5.QtCore import Qt, QTimer, QSize
 import indexGPU.Indexation_lib as il
 ##############################  the following classes are used for indexation  ##########################################
 path2thisFile = abspath(getsourcefile(lambda:0))
-uiclass, baseclass = pg.Qt.loadUiType(os.path.dirname(path2thisFile) + "/phase_form.ui")
+uiclass, baseclass = pg.Qt.loadUiType(os.path.dirname(path2thisFile) + "/phase_form_tempo.ui")
 
 class phaseForm(uiclass, baseclass):
     def __init__(self, parent, nbPhases):

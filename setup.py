@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='indexGPU',
-    version='0.1.35',
+    version='0.1.36',
     packages=find_packages(),
     install_requires=[
         "inichord >= 0.1.15",
@@ -12,7 +12,7 @@ setup(
 		"pyquaternion >=0.9",
     ],
  	data_files=[('Lib/site-packages/indexGPU', ['indexGPU/Indexation_GUI.ui']),('Lib/site-packages/indexGPU', ['indexGPU/Indexation_GUI_tempo.ui']),
-              ('Lib/site-packages/indexGPU', ['indexGPU/phase_form.ui']),('Lib/site-packages/indexGPU', ['indexGPU/Indexation_lib.py']),
+              ('Lib/site-packages/indexGPU', ['indexGPU/phase_form_tempo.ui']),('Lib/site-packages/indexGPU', ['indexGPU/Indexation_lib.py']),
      ],
     
     # package_data={
