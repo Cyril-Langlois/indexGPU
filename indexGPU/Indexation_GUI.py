@@ -27,8 +27,8 @@ import indexGPU.Xallo as xa
 import indexGPU.Indexation_lib as indGPU
 from indexGPU import Compute_IPF as IPF_computation
 from indexGPU import Symetry as sy
-from indexGPU import phaseGUI_classes as phaseClass
-# import phaseGUI_classes as phaseClass
+# from indexGPU import phaseGUI_classes as phaseClass
+import phaseGUI_classes as phaseClass
 
 from pyquaternion import Quaternion
 
