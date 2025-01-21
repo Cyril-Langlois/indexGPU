@@ -86,7 +86,7 @@ class phaseForm(uiclass, baseclass):
         self.label_map = np.rot90(self.label_map, k=1, axes=(1, 0))
         self.otsuListCreation()
         self.displaylabels(self.thresholded_maps[0])
-        self.label_title.setText("Phase n°: 0")
+        self.label_title_.setText("Phase n°: 0")
         
     def otsuListCreation (self):
         thresholds = []
@@ -147,7 +147,7 @@ class phaseForm(uiclass, baseclass):
             self.save_button.setEnabled(False)
         if self.otsu :
             self.displaylabels(self.thresholded_maps[prevIndex])
-            self.label_title.setText("Phase n°: " + str(prevIndex))
+            self.label_title_.setText("Phase n°: " + str(prevIndex))
              
     def nextPage (self):
         nextIndex = self.stackedW.currentIndex() + 1
@@ -168,7 +168,7 @@ class phaseForm(uiclass, baseclass):
             self.previous_button.setEnabled(True)
         if self.otsu :
             self.displaylabels(self.thresholded_maps[nextIndex])
-            self.label_title.setText("Phase n°: " + str(nextIndex))
+            self.label_title_.setText("Phase n°: " + str(nextIndex))
         
     def saveClicked (self) :
         empty = self.list_CIF.count(None) + self.list_DB.count(None) + self.list_DB_size.count(None)
