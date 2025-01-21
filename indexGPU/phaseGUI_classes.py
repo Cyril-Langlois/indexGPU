@@ -142,7 +142,8 @@ class phaseForm(uiclass, baseclass):
                 self.list_phase[i].SG_win = self.list_window[i]
                 self.list_phase[i].workflowCreation() #sans .workflow
                 
-            self.close
+            self.close()
+            self.parent.close()
     
     def showMsgBox (self):
         msg = QMessageBox()
