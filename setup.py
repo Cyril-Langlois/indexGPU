@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='indexGPU',
-    version='0.1.46',
+    version='0.1.47',
     packages=find_packages(),
     install_requires=[
         "inichord >= 0.1.15",
