@@ -141,9 +141,16 @@ class phaseForm(uiclass, baseclass):
                 self.list_phase[i].SG_poly = self.list_poly[i]
                 self.list_phase[i].SG_win = self.list_window[i]
                 self.list_phase[i].workflowCreation() #sans .workflow
-                
+            print("CifLoc :" , self.list_phase[0].CifLoc)
+            print("DatabaseLoc :" , self.list_phase[0].DatabaseLoc)
+            print("DB_size :" , self.list_phase[0].DB_Size)
+            print("diff :" , self.list_phase[0].diff)
+            print("SG :" , self.list_phase[0].SG)
+            print("SG_poly :" , self.list_phase[0].SG_poly)
+            print("SG_win :" , self.list_phase[0].SG_win)
+            print("Workflow :" , self.list_phase[0].Workflow)
+
             self.close()
-            self.parent.close()
     
     def showMsgBox (self):
         msg = QMessageBox()
