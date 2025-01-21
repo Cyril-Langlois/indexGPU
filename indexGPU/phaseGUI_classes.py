@@ -32,7 +32,21 @@ class phaseForm(uiclass, baseclass):
         self.list_poly = [2]*self.nbPhase
         self.list_window = [3]*self.nbPhase
         
-
+        
+        #SETTINGS FENETRE
+        self.gB_SG.setVisible(False) #Savgol non visible par défaut
+ 
+        if self.nbPhase == 1 : #Gestion des boutons previous et next
+            self.previous_button.setVisible(False)
+            self.next_button.setVisible(False)
+        # else :
+        #     self.list_pages = []
+        #     for i in range(self.nbPhase):
+        #         self.list_pages.append(QWidget())
+        #         self.stackedW.addWidget(self.list_pages[i])
+        #         self.stackedWSettings(i)
+ 
+ 
         #CONNEXIONS
         
         if self.nbPhase > 1 :
@@ -126,7 +140,7 @@ class phaseForm(uiclass, baseclass):
                 self.list_phase[i].SG = self.list_SG[i]
                 self.list_phase[i].SG_poly = self.list_poly[i]
                 self.list_phase[i].SG_win = self.list_window[i]
-                self.list_phase[i].Workflow.workflowCreation()
+                self.list_phase[i].workflowCreation() #sans .workflow
                 
             self.close
     
@@ -142,7 +156,7 @@ class phaseForm(uiclass, baseclass):
         layout_page = QVBoxLayout()
         string = f'Phase {index}'
         layout_page.addWidget(QLabel(string))
-        layout_page.addWidget(self.gB_viewing)
+        #layout_page.addWidget(self.gB_viewing)
         self.list_pages[index].setLayout(layout_page)
              
     def loadFile (self):
@@ -150,11 +164,11 @@ class phaseForm(uiclass, baseclass):
         sender = self.sender()
         options = QFileDialog.Options()
         if sender == self.load_CIF_button :
-            path, _ = QFileDialog.getOpenFileName(self, f"Select a CIF file :", "", "Tous les fichiers (*)", options=options)
+            path, _ = QFileDialog.getOpenFileName(self, f"Select a CIF file :", "", "Tous les fichiers (*.cif)", options=options)
             self.text_CIF.setText(path)
             self.list_CIF[i] = path
         else :
-            path, _ = QFileDialog.getOpenFileName(self, f"Select a Data Base file :", "", "Tous les fichiers (*)", options=options)
+            path, _ = QFileDialog.getOpenFileName(self, f"Select a Data Base file :", "", "Tous les fichiers (*.crddb)", options=options)
             self.text_DB_file.setText(path)
             self.list_DB[i] = path
             #self.text_DB_size = taille de la DB du fichier choisi
