@@ -564,7 +564,7 @@ class IndexationGPUderiv:
         QApplication.processEvents()
 
 #%% Pre-indexation
-class phaseObject:
+class phaseObject_old:
     """
     Classe permettant de stocker les chemins des fichiers CIF et DB, le workflow correspondant et la taille de la DB.
     """
@@ -602,6 +602,48 @@ class phaseObject:
         # print(f"phaseLoading.diff : {self.diff}")
         # print(f"phaseLoading.SG_win : {self.SG_win}")
         # print(f"phaseLoading.SG_poly : {self.SG_poly}")
+
+class phaseObject:
+    """
+    Classe permettant de stocker les chemins des fichiers CIF et DB, le workflow correspondant et la taille de la DB.
+    """
+    
+    def __init__(self):
+                
+        #Stockage CIF
+        self.CifLoc = ""
+        
+        #Stockage DB
+        self.DatabaseLoc = ""
+        
+        # Initialization
+        self.DB_Size = 2_000_000
+        self.SG = False
+        self.diff = 0
+        self.SG_win = 3
+        self.SG_poly = 2
+        self.Workflow = []
+
+        
+        #Creation workflow
+        # if self.SG:
+        #     Op = ['Diff', self.diff, self.SG_win, self.SG_poly]
+        # else:
+        #     Op = ['Diff', self.diff]
+            
+        # self.Workflow = [Op]
+        
+        # print(f"phaseLoading.DB_Size : {self.DB_Size}")
+        # print(f"phaseLoading.SG : {self.SG}")
+        # print(f"phaseLoading.diff : {self.diff}")
+        # print(f"phaseLoading.SG_win : {self.SG_win}")
+        # print(f"phaseLoading.SG_poly : {self.SG_poly}")
+    def workflowCreation (self):
+        if self.SG:
+            Op = ['Diff', self.diff, self.SG_win, self.SG_poly]
+        else:
+            Op = ['Diff', self.diff]
+        self.Workflow = [Op]
         
 class preIndexation:
     """
@@ -629,10 +671,15 @@ class preIndexation:
         else:
             self.Stack = tf.TiffFile(self.StackLoc[0]).asarray()
 
-        # Databases loading     
-        for i in range(parent.nPhases):
-            phase = phaseObject()
-            self.phaseList.append(phase)
+        # # Databases loading     
+        # for i in range(parent.nPhases):
+        #     phase = phaseObject()
+        #     self.phaseList.append(phase)
+        
+        # User interaction to load indexation parameters
+        self.phaseIndex = phaseClass.phaseForm(self, parent.nPhases)
+        self.phaseIndex.exec_()
+        
         
     def popup_message(self,title,text,icon):
         msg = QMessageBox()
