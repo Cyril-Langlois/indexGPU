@@ -579,7 +579,7 @@ class MainWindow(uiclass, baseclass):
         self.OriChoice = self.OriBox.currentText() # Choice between X-Y-Z
         
         if self.OriChoice == "IPF-X":
-            self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation.nScoresOri, IPF_view='X')
+            self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='X')
             self.IPF_map = np.flip(self.IPF_map,1)
             self.IPF_map = np.rot90(self.IPF_map)
             self.displayIPFmap(self.IPF_map)

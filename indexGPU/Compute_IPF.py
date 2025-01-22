@@ -80,24 +80,25 @@ def IPF_Z_GUI(quats, PhaseName, PG, phases, Ipf_dir = Vector3d.zvector()):
         k = 0
  
     # ré-importation
-    phase_id = page[:,:, 0]
-    y = page[:,:, 1]
-    x = page[:,:, 2]
-    quats = page[:,:, 3:]
+    phase_id = page[:,:, 0]     # tableau contenant [score, n° du pixel, phase dans laquelle est le pixel]
+    y = page[:,:, 1]            # tableau contenant [score, n° du pixel, position y de ce pixel]
+    x = page[:,:, 2]            # tableau contenant [score, n° du pixel, position x de ce pixel]
+    quats = page[:,:, 3:]       # tableau contenant [score, n° du pixel, quaternion associé au pixel]
     
     # conversion Quaternion -> axe-angle car Orix ne permet pas l'import de quaternion expérimentaux !
-    axes = np.zeros((1,len(quats[0]), 3))
-    angles = np.zeros((1,len(quats[0]),1))
+    axes = np.zeros((1,len(quats[0]), 3))   # axe 0 inutilisé
+    angles = np.zeros((1,len(quats[0]),1))  # axes 0 et 2 inutilisés
     
     for i in range(len(quats[0])):
         a, b = xa.QuaternionToAxisAngle(quats[0,i, :])
-        axes[0,i, :] = a
-        angles[0,i] = b
+        axes[0,i, :] = a        # Note : on ne se sert pas pour l'instant de l'axe 0, censé contenir le nScore
+        angles[0,i] = b         # on stocke bien ces données en ligne, une par pixel. Ca marche même si 3 dimensions dans angles
     
     rotations = []
     
-    axes_i = axes[0,:,:]
-    angles_i = angles[0,:,0]
+    axes_i = axes[0,:,:]        # simplification de la dimension inutile en axe 0
+    angles_i = angles[0,:,0]    # simplification de la dimension inutile en axe 0 et en axe 2 (qui étaient "fakes")
+    
     rotations_i = Rotation.from_axes_angles(axes_i, angles_i, degrees= True)
     rotations.append(rotations_i)
     
