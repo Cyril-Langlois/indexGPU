@@ -125,11 +125,15 @@ class phaseForm(uiclass, baseclass):
             self.gB_DB.setVisible(True)
             self.gB_workflow.setVisible(True)
             self.list_toIndex[i] = True
+            print("checked")
+            print (self.list_toIndex[i])
         else :
             self.gB_cristallo.setVisible(False)
             self.gB_DB.setVisible(False)
             self.gB_workflow.setVisible(False)
             self.list_toIndex[i] = False
+            print("unchecked")
+            print (self.list_toIndex[i])
             
     
     def SpinBox_changed(self):
