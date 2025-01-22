@@ -63,6 +63,7 @@ class phaseForm(uiclass, baseclass):
             self.indexQuestion.setEnabled(False)
             self.save_button.setEnabled(False)
             if self.nbPhase > 1 : #Gestion des boutons previous et next
+                self.previous_button.setEnabled(False)
                 self.next_button.setEnabled(False)
 
 
@@ -107,7 +108,7 @@ class phaseForm(uiclass, baseclass):
             self.next_button.setEnabled(True)
         
     def otsuListCreation (self):
-        nbClass = np.max(self.label_map)
+        nbClass = np.max(self.label_map) + 1
         if nbClass != self.nbPhase:
             self.showMsgBox("Number of class in otsu map is different from the number of phases.")
         else:
@@ -277,8 +278,8 @@ class phaseForm(uiclass, baseclass):
         view.setState(state)
         
         # histplot = self.LabelsSeries.getHistogramWidget()
-        # self.LabelsSeries.setColorMap(pg.colormap.get('viridis'))
-        self.LabelsSeries.setColorMap(pg.colormap())
+        self.LabelsSeries.setColorMap(pg.colormap.get('viridis'))
+        # self.LabelsSeries.setColorMap(pg.colormap())
 
     
 
