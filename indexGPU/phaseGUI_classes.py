@@ -81,7 +81,7 @@ class phaseForm(uiclass, baseclass):
         self.spinBox_window.valueChanged.connect(self.SpinBox_changed)
         self.spinBox_poly.valueChanged.connect(self.SpinBox_changed)
         self.label_bbtn.clicked.connect(self.importLabel)
-        self.indexQuestion.stateChanged.connect(self.fillOrNot(0))
+        self.indexQuestion.stateChanged.connect(self.fillOrNot)
        
         
     #METHODES    
@@ -117,11 +117,9 @@ class phaseForm(uiclass, baseclass):
                 thresholded_map = np.where(self.label_map == i,1,0)
                 self.thresholded_maps.append(thresholded_map)
                   
-    def fillOrNot (self, ind):
-        if ind == 0:
-            i = self.stackedW.currentIndex()
-        else:
-            i = ind
+    def fillOrNot (self):
+        i = self.stackedW.currentIndex()
+
         if self.indexQuestion.isChecked():
             self.gB_cristallo.setVisible(True)
             self.gB_DB.setVisible(True)
