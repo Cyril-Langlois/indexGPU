@@ -41,11 +41,13 @@ class phaseForm(uiclass, baseclass):
         self.gB_otsu.setVisible(False) #gB otsu non visible par défaut
         self.gB_SG.setVisible(False) #Savgol non visible par défaut
         
-        # self.label_bbtn.setVisible(False) #Bouton chargement otsu non visible par défaut
  
         if self.nbPhase == 1 : #Gestion des boutons previous et next
             self.previous_button.setVisible(False)
             self.next_button.setVisible(False)
+        # else :
+        #     self.previous_button.setEnabled(False)
+        #     self.save_button.setEnabled(False)
         # else :
         #     self.list_pages = []
         #     for i in range(self.nbPhase):
@@ -59,10 +61,11 @@ class phaseForm(uiclass, baseclass):
             self.gB_DB.setVisible(False)
             self.gB_workflow.setVisible(False)
             self.indexQuestion.setEnabled(False)
-            
-            
- 
- 
+            self.save_button.setEnabled(False)
+            if self.nbPhase > 1 : #Gestion des boutons previous et next
+                self.next_button.setEnabled(False)
+
+
         #CONNEXIONS
         
         if self.nbPhase > 1 :
@@ -98,18 +101,31 @@ class phaseForm(uiclass, baseclass):
         self.gB_DB.setVisible(True)
         self.gB_workflow.setVisible(True)
         self.indexQuestion.setEnabled(True)
+        if self.nbPhase == 1:
+            self.save_button.setEnabled(True)
+        else :
+            self.next_button.setEnabled(True)
         
     def otsuListCreation (self):
-        thresholds = []
+        nbClass = np.max(self.label_map)
+        if nbClass != self.nbPhase:
+            self.showMsgBox("Number of class in otsu map is different from the number of phases.")
+        else:
+            self.thresholded_maps = []
+            for i in range (self.nbPhase):
+                thresholded_map = np.where(self.label_map == i,0.2,0)
+                self.thresholded_maps.append(thresholded_map)
+                
+        # thresholds = []
         
-        for i in range(0,self.nbPhase):
-            var = i
-            thresholds.append(i)
+        # for i in range(0,self.nbPhase):
+        #     var = i
+        #     thresholds.append(i)
         
-        self.thresholded_maps = []
-        for threshold in thresholds:
-            thresholded_map = np.where(self.label_map == threshold,1,0)
-            self.thresholded_maps.append(thresholded_map)
+        # self.thresholded_maps = []
+        # for threshold in thresholds:
+        #     thresholded_map = np.where(self.label_map == threshold,1,0)
+        #     self.thresholded_maps.append(thresholded_map)
             
     def fillOrNot (self):
         i = self.stackedW.currentIndex()
@@ -173,6 +189,7 @@ class phaseForm(uiclass, baseclass):
         if self.otsu :
             self.displaylabels(self.thresholded_maps[prevIndex])
             self.label_title_.setText("Phase n°: " + str(prevIndex))
+            self.indexQuestion.setState(self.list_toIndex[prevIndex])
              
     def nextPage (self):
         nextIndex = self.stackedW.currentIndex() + 1
@@ -194,11 +211,17 @@ class phaseForm(uiclass, baseclass):
         if self.otsu :
             self.displaylabels(self.thresholded_maps[nextIndex])
             self.label_title_.setText("Phase n°: " + str(nextIndex))
+            self.indexQuestion.setState(self.list_toIndex[nextIndex])
         
-    def saveClicked (self) :
-        empty = self.list_CIF.count(None) + self.list_DB.count(None) + self.list_DB_size.count(None)
-        if empty >0 :
-            self.showMsgBox()
+    def saveClicked (self):
+        empty = 0
+        for j in range(self.nbPhase):
+            if self.list_toIndex[j]:
+                if self.list_CIF[j] == None or self.list_DB[j] == None or self.list_DB_size[j] == None:
+                    empty += 1
+                    
+        if empty > 0:
+            self.showMsgBox("At least one file or data base size is missing.") 
         else :
             for i in range (self.nbPhase):
                 #MAJ des attributs d'une phase i
@@ -215,14 +238,14 @@ class phaseForm(uiclass, baseclass):
 
             self.close()
     
-    def showMsgBox (self):
+    def showMsgBox (self, message):
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Icon.Critical)
-        msg.setText("At least one file or data base size is missing.")
+        msg.setText(message)
         msg.setWindowTitle("Critical MessageBox")
         msg.setStandardButtons(QMessageBox.StandardButton.Ok)
         retval = msg.exec()
-    
+        
     def stackedWSettings (self, index):
         layout_page = QVBoxLayout()
         string = f'Phase {index}'
@@ -253,10 +276,13 @@ class phaseForm(uiclass, baseclass):
         self.LabelsSeries.setImage(series) 
         view.setState(state)
         
-        histplot = self.LabelsSeries.getHistogramWidget()
-        self.LabelsSeries.setColorMap(pg.colormap.get('viridis'))
+        # histplot = self.LabelsSeries.getHistogramWidget()
+        # self.LabelsSeries.setColorMap(pg.colormap.get('viridis'))
+        self.LabelsSeries.setColorMap(pg.colormap())
 
     
+
+
 class phaseNum(QDialog):
     def __init__(self, parent):
         super().__init__()
