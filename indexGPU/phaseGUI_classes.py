@@ -179,7 +179,7 @@ class phaseForm(uiclass, baseclass):
         if self.otsu :
             self.displaylabels(self.thresholded_maps[prevIndex])
             self.label_title_.setText("Phase n°: " + str(prevIndex))
-            self.indexQuestion.setState(self.list_toIndex[prevIndex])
+            self.indexQuestion.setCheckState(self.list_toIndex[prevIndex])
              
     def nextPage (self):
         nextIndex = self.stackedW.currentIndex() + 1
@@ -201,7 +201,7 @@ class phaseForm(uiclass, baseclass):
         if self.otsu :
             self.displaylabels(self.thresholded_maps[nextIndex])
             self.label_title_.setText("Phase n°: " + str(nextIndex))
-            self.indexQuestion.setState(self.list_toIndex[nextIndex])
+            self.indexQuestion.setCheckState(self.list_toIndex[nextIndex])
         
     def saveClicked (self):
         empty = 0
