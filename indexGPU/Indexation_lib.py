@@ -6,8 +6,8 @@ Created on Wed Feb  1 20:53:26 2023
 """
 import indexGPU.Xallo as xa
 from indexGPU import Symetry as sy
-from indexGPU import phaseGUI_classes as phaseClass
-# import phaseGUI_classes as phaseClass
+# from indexGPU import phaseGUI_classes as phaseClass
+import phaseGUI_classes_local as phaseClass
 from inichord import Profile_Modification as fct
 from inichord import General_Functions as gf
 from PyQt5.QtWidgets import QApplication
@@ -625,20 +625,6 @@ class phaseObject:
         self.SG_poly = 2
         self.Workflow = []
 
-        
-        #Creation workflow
-        # if self.SG:
-        #     Op = ['Diff', self.diff, self.SG_win, self.SG_poly]
-        # else:
-        #     Op = ['Diff', self.diff]
-            
-        # self.Workflow = [Op]
-        
-        # print(f"phaseLoading.DB_Size : {self.DB_Size}")
-        # print(f"phaseLoading.SG : {self.SG}")
-        # print(f"phaseLoading.diff : {self.diff}")
-        # print(f"phaseLoading.SG_win : {self.SG_win}")
-        # print(f"phaseLoading.SG_poly : {self.SG_poly}")
     def workflowCreation (self):
         if self.SG:
             Op = ['Diff', self.diff, self.SG_win, self.SG_poly]
@@ -661,6 +647,7 @@ class preIndexation:
         self.pixmap = self.pixmap.scaled(100, 100)
         
         self.phaseList = []
+        self.SymQ = []
         
         # Profile stack loading
         self.StackLoc, self.StackDir = gf.getFilePathDialog("série d'images à indexer (*.tiff)")
@@ -680,6 +667,10 @@ class preIndexation:
         # User interaction to load indexation parameters
         self.phaseIndex = phaseClass.phaseForm(self, parent.nPhases)
         self.phaseIndex.exec_()
+        
+        # self.SymQ = sy.get_proper_quaternions_from_CIF(self.preInd.CifLoc) # Get the variable symQ for symmetry of quaternions
+        for i, phase in enumerate(self.phaseList):
+            self.SymQ.append(sy.get_proper_quaternions_from_CIF(phase.CifLoc)) # Get the variable symQ for symmetry of quaternions
         
         
     def popup_message(self,title,text,icon):

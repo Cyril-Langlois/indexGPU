@@ -24,11 +24,13 @@ from PyQt5 import QtCore, QtGui
 
 from inichord import General_Functions as gf
 import indexGPU.Xallo as xa
-import indexGPU.Indexation_lib as indGPU
+# import indexGPU.Indexation_lib as indGPU
+import Indexation_lib as indGPU
 from indexGPU import Compute_IPF as IPF_computation
 from indexGPU import Symetry as sy
-from indexGPU import phaseGUI_classes as phaseClass
+# from indexGPU import phaseGUI_classes as phaseClass
 # import phaseGUI_classes as phaseClass
+import phaseGUI_classes_local as phaseClass
 
 from pyquaternion import Quaternion
 
@@ -156,8 +158,6 @@ class MainWindow(uiclass, baseclass):
         self.phaseNumGUI = phaseClass.phaseNum(self)
         self.phaseNumGUI.exec_()
         
-        print(f"test phase num from class : {self.nPhases}")
-        
         self.preInd = indGPU.preIndexation(self) # Ask to open the three files
         
         # Creation of self.Current_stack to be use elsewhere
@@ -175,8 +175,8 @@ class MainWindow(uiclass, baseclass):
         else:
             self.displayExpStack(self.Current_stack) # Display the 3D array
 
-        # self.SymQ = sy.get_proper_quaternions_from_CIF(self.preInd.CifLoc) # Get the variable symQ for symmetry of quaternions
-        self.SymQ = sy.get_proper_quaternions_from_CIF(self.preInd.phaseList[0].CifLoc) # Get the variable symQ for symmetry of quaternions
+        # # self.SymQ = sy.get_proper_quaternions_from_CIF(self.preInd.CifLoc) # Get the variable symQ for symmetry of quaternions
+        # self.SymQ = sy.get_proper_quaternions_from_CIF(self.preInd.phaseList[0].CifLoc) # Get the variable symQ for symmetry of quaternions
         
         # Storage folder creation
         ti = time.strftime("%Y-%m-%d__%Hh-%Mm-%Ss") # Absolute time 
@@ -404,13 +404,13 @@ class MainWindow(uiclass, baseclass):
         
         # Generation of the maps using the information of the clustered map          
         # Create the new arrays using np.where
-        self.indexation.quality_map_tempo = np.zeros((len(labels),len(labels[0])))
-        self.indexation.nScoresOri_tempo = np.zeros((1,4,len(labels),len(labels[0])))
-        self.indexation.nScoresDist_tempo = np.zeros((1,len(labels),len(labels[0])))
-        self.indexation.rawImage_tempo = np.zeros((len(self.indexation.rawImage),len(labels),len(labels[0])))
-        self.indexation.nScoresStack_tempo = np.zeros((1,len(self.indexation.nScoresStack[0]),len(labels),len(labels[0])))
-        self.indexation.Treatment_theo_prof_tempo = np.zeros((1,len(self.indexation.Treatment_theo_prof[0]),len(labels),len(labels[0])))
-        self.indexation.testArrayList_tempo = np.zeros((len(self.indexation.testArrayList),len(labels),len(labels[0])))
+        self.indexation[0].quality_map_tempo = np.zeros((len(labels),len(labels[0])))
+        self.indexation[0].nScoresOri_tempo = np.zeros((1,4,len(labels),len(labels[0])))
+        self.indexation[0].nScoresDist_tempo = np.zeros((1,len(labels),len(labels[0])))
+        self.indexation[0].rawImage_tempo = np.zeros((len(self.indexation[0].rawImage),len(labels),len(labels[0])))
+        self.indexation[0].nScoresStack_tempo = np.zeros((1,len(self.indexation[0].nScoresStack[0]),len(labels),len(labels[0])))
+        self.indexation[0].Treatment_theo_prof_tempo = np.zeros((1,len(self.indexation[0].Treatment_theo_prof[0]),len(labels),len(labels[0])))
+        self.indexation[0].testArrayList_tempo = np.zeros((len(self.indexation[0].testArrayList),len(labels),len(labels[0])))
 
         self.progressBar.setValue(0)
         self.progressBar.setFormat("Map formation: %p%")
@@ -423,22 +423,22 @@ class MainWindow(uiclass, baseclass):
             self.progression_bar()
             
             var = np.where(labels == i)
-            self.indexation.quality_map_tempo[var] = self.indexation.quality_map[:,i-1]
-            self.indexation.nScoresOri_tempo[:,:,var[0],var[1]] = self.indexation.nScoresOri[:,:,:,i-1]
-            self.indexation.nScoresDist_tempo[:,var[0],var[1]] = self.indexation.nScoresDist[:,:,i-1]
-            self.indexation.rawImage_tempo[:,var[0],var[1]] = self.indexation.rawImage[:,:,i-1]
-            self.indexation.nScoresStack_tempo[:,:,var[0],var[1]] = self.indexation.nScoresStack[:,:,:,i-1]
-            self.indexation.Treatment_theo_prof_tempo[:,:,var[0],var[1]] = self.indexation.Treatment_theo_prof[:,:,:,i-1]
-            self.indexation.testArrayList_tempo[:,var[0],var[1]] = self.indexation.testArrayList[:,:,i-1]
+            self.indexation[0].quality_map_tempo[var] = self.indexation[0].quality_map[:,i-1]
+            self.indexation[0].nScoresOri_tempo[:,:,var[0],var[1]] = self.indexation[0].nScoresOri[:,:,:,i-1]
+            self.indexation[0].nScoresDist_tempo[:,var[0],var[1]] = self.indexation[0].nScoresDist[:,:,i-1]
+            self.indexation[0].rawImage_tempo[:,var[0],var[1]] = self.indexation[0].rawImage[:,:,i-1]
+            self.indexation[0].nScoresStack_tempo[:,:,var[0],var[1]] = self.indexation[0].nScoresStack[:,:,:,i-1]
+            self.indexation[0].Treatment_theo_prof_tempo[:,:,var[0],var[1]] = self.indexation[0].Treatment_theo_prof[:,:,:,i-1]
+            self.indexation[0].testArrayList_tempo[:,var[0],var[1]] = self.indexation[0].testArrayList[:,:,i-1]
         
         # Then replace the arrays 
-        self.indexation.quality_map = self.indexation.quality_map_tempo
-        self.indexation.nScoresOri = self.indexation.nScoresOri_tempo
-        self.indexation.nScoresDist = self.indexation.nScoresDist_tempo
-        self.indexation.rawImage = self.indexation.rawImage_tempo
-        self.indexation.nScoresStack = self.indexation.nScoresStack_tempo
-        self.indexation.Treatment_theo_prof = self.indexation.Treatment_theo_prof_tempo
-        self.indexation.testArrayList = self.indexation.testArrayList_tempo
+        self.indexation[0].quality_map = self.indexation[0].quality_map_tempo
+        self.indexation[0].nScoresOri = self.indexation[0].nScoresOri_tempo
+        self.indexation[0].nScoresDist = self.indexation[0].nScoresDist_tempo
+        self.indexation[0].rawImage = self.indexation[0].rawImage_tempo
+        self.indexation[0].nScoresStack = self.indexation[0].nScoresStack_tempo
+        self.indexation[0].Treatment_theo_prof = self.indexation[0].Treatment_theo_prof_tempo
+        self.indexation[0].testArrayList = self.indexation[0].testArrayList_tempo
         
         # Recreate an h5 file with the new data
         self.savingRes_cluster()
@@ -450,78 +450,90 @@ class MainWindow(uiclass, baseclass):
         self.progressBar.setFormat("Indexation")
         self.Info_box.clear() # Clear the information box
         self.methodChoice = self.PresetBox.currentText() # Choice between diff0 or diff1
-
-        self.savgol_window = self.window_SpinBox.value() # Window length of the filter
-        self.savgol_polyorder = self.poly_SpinBox.value() # Order of the polynomial
+        self.indexation =  []
         
-        # Specify which type of indexation must be use
-        if self.methodChoice == "Classical indexation":
-            Op1 = ['Diff', 0]
-        elif self.methodChoice == "Derivative indexation":
-            Op1 = ['Diff', 1]   
-        elif self.methodChoice == "Savgol derivative indexation":
-            Op1 = ['Diff', 1, self.savgol_window, self.savgol_polyorder]
+
+        # self.savgol_window = self.window_SpinBox.value() # Window length of the filter
+        # self.savgol_polyorder = self.poly_SpinBox.value() # Order of the polynomial
+        
+        # # Specify which type of indexation must be use
+        # if self.methodChoice == "Classical indexation":
+        #     Op1 = ['Diff', 0]
+        # elif self.methodChoice == "Derivative indexation":
+        #     Op1 = ['Diff', 1]   
+        # elif self.methodChoice == "Savgol derivative indexation":
+        #     Op1 = ['Diff', 1, self.savgol_window, self.savgol_polyorder]
             
-        Workflow = []
-        Workflow.append(Op1)
+        # Workflow = []
+        # Workflow.append(Op1)
         
         self.BatchProfiles_value = self.Profiles_SpinBox.value() # Number of experimental profiles per batch
         self.BatchDatabase_value = self.Database_SpinBox.value() # Number of theoretical profiles per batch
         
         # Indexation preparation
         # self.indexation = indGPU.IndexationGPUderiv(self,self.preInd.Stack, self.PathDir, self.preInd.DatabaseLoc, self.preInd.CifLoc, Workflow = Workflow, normType = "centered euclidian", nbSTACK=self.BatchProfiles_value, nbDB = self.BatchDatabase_value)
-        self.indexation = indGPU.IndexationGPUderiv(self,self.preInd.Stack, 
-                                                    self.PathDir, self.preInd.phaseList[0].DatabaseLoc, 
-                                                    self.preInd.phaseList[0].CifLoc, 
-                                                    Workflow = Workflow, 
-                                                    normType = "centered euclidian", nbSTACK=self.BatchProfiles_value,
-                                                    nbDB = self.BatchDatabase_value)
+        # self.indexation = indGPU.IndexationGPUderiv(self,self.preInd.Stack, 
+        #                                             self.PathDir, self.preInd.phaseList[0].DatabaseLoc, 
+        #                                             self.preInd.phaseList[0].CifLoc, 
+        #                                             Workflow = Workflow, 
+        #                                             normType = "centered euclidian", nbSTACK=self.BatchProfiles_value,
+        #                                             nbDB = self.BatchDatabase_value)
+        for i in range(self.nPhases):
+            
+            self.indexation.append(indGPU.IndexationGPUderiv(self,self.preInd.Stack, 
+                                                        self.PathDir, self.preInd.phaseList[i].DatabaseLoc, 
+                                                        self.preInd.phaseList[i].CifLoc, 
+                                                        Workflow = self.preInd.phaseList[i].Workflow, 
+                                                        normType = "centered euclidian", nbSTACK=self.BatchProfiles_value,
+                                                        nbDB = self.BatchDatabase_value))
+        
         # Run indexation matching step
-        self.indexation.runIndexation()
+        for i in range(self.nPhases):
+            self.indexation[i].runIndexation()
             
         if self.Cluster_index.isChecked(): # Specific to cluster indexation 
             self.labelIndex()
             
         # Keep the first and only score, then swapaxes
-        self.ori = self.indexation.nScoresOri[0,:,:,:]
+        self.ori = self.indexation[0].nScoresOri[0,:,:,:]
         self.ori = np.swapaxes(self.ori, 1, 2)
                 
-        self.indexation.quality_map = np.flip(self.indexation.quality_map, 0) # Flip the array
-        self.indexation.quality_map = np.rot90(self.indexation.quality_map, k=1, axes=(1, 0)) # Rotate the array
+        self.indexation[0].quality_map = np.flip(self.indexation.quality_map, 0) # Flip the array
+        self.indexation[0].quality_map = np.rot90(self.indexation.quality_map, k=1, axes=(1, 0)) # Rotate the array
         
-        self.displayQuality(self.indexation.quality_map) # Display the quality map
+        self.displayQuality(self.indexation[0].quality_map) # Display the quality map
         
         self.expSeries.setVisible(True) # Show the image serie display window
         
-        self.indexation.rawImage = np.flip(self.indexation.rawImage, 1) # Flip the array
-        self.indexation.rawImage = np.rot90(self.indexation.rawImage, k=1, axes=(2, 1)) # Rotate the array
-        self.displayExpStack(self.indexation.rawImage) # Display the 3D array
+        self.indexation[0].rawImage = np.flip(self.indexation[0].rawImage, 1) # Flip the array
+        self.indexation[0].rawImage = np.rot90(self.indexation[0].rawImage, k=1, axes=(2, 1)) # Rotate the array
+        self.displayExpStack(self.indexation[0].rawImage) # Display the 3D array
         
         self.Info_box.ensureCursorVisible()
         self.Info_box.insertPlainText("\n \u2022 Quality map has been computed.")
         QApplication.processEvents()
         
         # Flip and rotate self.nScoresDist to be homogenenous (for computation)
-        self.indexation.nScoresDist = np.flip(self.indexation.nScoresDist, 1)
-        self.indexation.nScoresDist = np.rot90(self.indexation.nScoresDist, k=1, axes=(2, 1))
+        self.indexation[0].nScoresDist = np.flip(self.indexation[0].nScoresDist, 1)
+        self.indexation[0].nScoresDist = np.rot90(self.indexation[0].nScoresDist, k=1, axes=(2, 1))
         
         # For viewing data diff or not OR theo profiles : extract of the first and only score then flip and rotate       
-        self.Current_stack = self.indexation.rawImage # Extract the stack of images
+        self.Current_stack = self.indexation[0].rawImage # Extract the stack of images
         
-        self.theo_stack = self.indexation.nScoresStack[0, :, :, :]
+        self.theo_stack = self.indexation[0].nScoresStack[0, :, :, :]
         self.theo_stack = np.flip(self.theo_stack, 1)
         self.theo_stack = np.rot90(self.theo_stack, k=1, axes=(2, 1))
         
-        self.stack_mod = self.indexation.Treatment_theo_prof[0, :, :, :]
+        self.stack_mod = self.indexation[0].Treatment_theo_prof[0, :, :, :]
         self.stack_mod = np.flip(self.stack_mod, 1)
         self.stack_mod = np.rot90(self.stack_mod, k=1, axes=(2, 1))
         
-        self.expStack_mod = self.indexation.testArrayList
+        self.expStack_mod = self.indexation[0].testArrayList
         self.expStack_mod = np.flip(self.expStack_mod, 1)
         self.expStack_mod = np.rot90(self.expStack_mod, k=1, axes=(2, 1))
         
         # Display of IPF map 
-        self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation.CIF, self.indexation.nScoresOri, IPF_view='Z')
+        self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Z')
         self.IPF_map = np.flip(self.IPF_map,1)
         self.IPF_map = np.rot90(self.IPF_map)
          
@@ -532,29 +544,29 @@ class MainWindow(uiclass, baseclass):
     def savingRes_cluster(self):
         ti = time.strftime("%Y-%m-%d__%Hh-%Mm-%Ss")
         
-        indexSTACK = h5py.File(self.indexation.savePath + '\Cluster_indexScores_'+ ti + '.hdf5', 'a')
+        indexSTACK = h5py.File(self.indexation[0].savePath + '\Cluster_indexScores_'+ ti + '.hdf5', 'a')
         
-        group = indexSTACK.create_group('indexation')
-        group.create_dataset(name='nScoresStack', data=self.indexation.nScoresStack)
-        group.create_dataset(name='Treatment_theo_prof', data=self.indexation.Treatment_theo_prof) #Profil théo modifiés
-        group.create_dataset(name='rawImage', data=self.indexation.rawImage)
-        group.create_dataset(name='nScoresDist', data=self.indexation.nScoresDist)
-        group.create_dataset(name='nScoresOri', data=self.indexation.nScoresOri)
-        group.create_dataset(name='Ref_Pr_list3', data=self.indexation.Ref_Pr_list2)
-        group.create_dataset(name='testArrayList', data=self.indexation.testArrayList) #Profil expé modifiés
-        group.create_dataset(name='quality_map', data=self.indexation.quality_map) #Profil expé modifiés
+        group = indexSTACK.create_group('indexation[0]')
+        group.create_dataset(name='nScoresStack', data=self.indexation[0].nScoresStack)
+        group.create_dataset(name='Treatment_theo_prof', data=self.indexation[0].Treatment_theo_prof) #Profil théo modifiés
+        group.create_dataset(name='rawImage', data=self.indexation[0].rawImage)
+        group.create_dataset(name='nScoresDist', data=self.indexation[0].nScoresDist)
+        group.create_dataset(name='nScoresOri', data=self.indexation[0].nScoresOri)
+        group.create_dataset(name='Ref_Pr_list3', data=self.indexation[0].Ref_Pr_list2)
+        group.create_dataset(name='testArrayList', data=self.indexation[0].testArrayList) #Profil expé modifiés
+        group.create_dataset(name='quality_map', data=self.indexation[0].quality_map) #Profil expé modifiés
                  
-        group.attrs.create("profile length", self.indexation.actualProfLength)
-        group.attrs.create("dbChunks", self.indexation.dbChunks)
-        group.attrs.create("height", self.indexation.height)
-        group.attrs.create("width", self.indexation.width)
-        group.attrs.create("CIF path", self.indexation.CIF)
-        group.attrs.create("stack path", self.indexation.savePath)
-        group.attrs.create("database path", self.indexation.DB)
-        group.attrs.create("normalization before indexation", self.indexation.normType)
-        group.attrs.create("metric for Indexation", "cosine")
-        group.attrs.create("nbSTACK", self.indexation.nbSTACK)
-        group.attrs.create("nbDB", self.indexation.nbDB)
+        group.attrs.create("profile length", self.indexation[0].actualProfLength)
+        group.attrs.create("dbChunks", self.indexation[0].dbChunks)
+        group.attrs.create("height", self.indexation[0].height)
+        group.attrs.create("width", self.indexation[0].width)
+        group.attrs.create("CIF path", self.indexation[0].CIF)
+        group.attrs.create("stack path", self.indexation[0].savePath)
+        group.attrs.create("database path", self.indexation[0].DB)
+        group.attrs.create("normalization before indexation[0]", self.indexation[0].normType)
+        group.attrs.create("metric for indexation[0]", "cosine")
+        group.attrs.create("nbSTACK", self.indexation[0].nbSTACK)
+        group.attrs.create("nbDB", self.indexation[0].nbDB)
         
         indexSTACK.flush()
         indexSTACK.close()
@@ -567,17 +579,17 @@ class MainWindow(uiclass, baseclass):
         self.OriChoice = self.OriBox.currentText() # Choice between X-Y-Z
         
         if self.OriChoice == "IPF-X":
-            self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation.CIF, self.indexation.nScoresOri, IPF_view='X')
+            self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation.nScoresOri, IPF_view='X')
             self.IPF_map = np.flip(self.IPF_map,1)
             self.IPF_map = np.rot90(self.IPF_map)
             self.displayIPFmap(self.IPF_map)
         elif self.OriChoice == "IPF-Y":
-            self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation.CIF, self.indexation.nScoresOri, IPF_view='Y')
+            self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Y')
             self.IPF_map = np.flip(self.IPF_map,1)
             self.IPF_map = np.rot90(self.IPF_map)
             self.displayIPFmap(self.IPF_map)
         elif self.OriChoice == "IPF-Z":
-            self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation.CIF, self.indexation.nScoresOri, IPF_view='Z')
+            self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Z')
             self.IPF_map = np.flip(self.IPF_map,1)
             self.IPF_map = np.rot90(self.IPF_map)
             self.displayIPFmap(self.IPF_map)
@@ -670,9 +682,9 @@ class MainWindow(uiclass, baseclass):
         self.progressBar.setValue(self.prgbar)
 
     def Save_results(self):
-        IPF_map_X = IPF_computation.Display_IPF_GUI(self.indexation.CIF, self.indexation.nScoresOri, IPF_view='X')
-        IPF_map_Y = IPF_computation.Display_IPF_GUI(self.indexation.CIF, self.indexation.nScoresOri, IPF_view='Y')
-        IPF_map_Z = IPF_computation.Display_IPF_GUI(self.indexation.CIF, self.indexation.nScoresOri, IPF_view='Z')
+        IPF_map_X = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='X')
+        IPF_map_Y = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Y')
+        IPF_map_Z = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Z')
         
         IPF_map_X = (IPF_map_X * 255).astype(np.uint8)
         IPF_map_Y = (IPF_map_Y * 255).astype(np.uint8)
@@ -680,20 +692,20 @@ class MainWindow(uiclass, baseclass):
     
         # Images saving step
         if self.flag_folder == 1:
-            tf.imwrite(self.PathDir + '/Quality_map.tiff', np.rot90(np.flip(self.indexation.quality_map, 0), k=1, axes=(1, 0)))
-            tf.imwrite(self.PathDir + '/Distance_map.tiff',np.rot90(np.flip(1-self.indexation.nScoresDist, 1), k=1, axes=(2, 1)))
+            tf.imwrite(self.PathDir + '/Quality_map.tiff', np.rot90(np.flip(self.indexation[0].quality_map, 0), k=1, axes=(1, 0)))
+            tf.imwrite(self.PathDir + '/Distance_map.tiff',np.rot90(np.flip(1-self.indexation[0].nScoresDist, 1), k=1, axes=(2, 1)))
             tf.imwrite(self.PathDir + '/IPF_X.tiff',IPF_map_X)
             tf.imwrite(self.PathDir + '/IPF_Y.tiff',IPF_map_Y)
             tf.imwrite(self.PathDir + '/IPF_Z.tiff',IPF_map_Z)
         else: 
-            tf.imwrite(self.StackDir + '/Quality_map.tiff', np.rot90(np.flip(self.indexation.quality_map, 0), k=1, axes=(1, 0)))
-            tf.imwrite(self.StackDir + '/Distance_map.tiff',np.rot90(np.flip(1-self.indexation.nScoresDist, 1), k=1, axes=(2, 1)))
+            tf.imwrite(self.StackDir + '/Quality_map.tiff', np.rot90(np.flip(self.indexation[0].quality_map, 0), k=1, axes=(1, 0)))
+            tf.imwrite(self.StackDir + '/Distance_map.tiff',np.rot90(np.flip(1-self.indexation[0].nScoresDist, 1), k=1, axes=(2, 1)))
             tf.imwrite(self.StackDir + '/IPF_X.tiff',IPF_map_X)
             tf.imwrite(self.StackDir + '/IPF_Y.tiff',IPF_map_Y)
             tf.imwrite(self.StackDir + '/IPF_Z.tiff',IPF_map_Z)
             
         # Finished message
-        self.popup_message("Indexation","Saving process is over.",'icons/Indexation_icon.png')
+        self.popup_message("indexation[0]","Saving process is over.",'icons/indexation[0]_icon.png')
 
     def mouseMoved(self, e):
         pos = e[0]
@@ -726,7 +738,7 @@ class MainWindow(uiclass, baseclass):
                 self.x = int(mousePoint.x())
                 self.y = int(mousePoint.y())
                 
-                self.label_Quality.setText("Quality indice: " + str(np.round(self.indexation.quality_map[self.x, self.y],1)) + "%")
+                self.label_Quality.setText("Quality indice: " + str(np.round(self.indexation[0].quality_map[self.x, self.y],1)) + "%")
             except:
                 pass
 
