@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLineEdit, QChec
 from PyQt5.QtCore import Qt, QTimer, QSize
 #from indexGPU import Indexation_lib as il
 import indexGPU.Indexation_lib as il
-from inichord import General_Functions as gf 
+
 import numpy as np
 import tifffile as tf
 ##############################  the following classes are used for indexation  ##########################################
@@ -26,6 +26,7 @@ class phaseForm(uiclass, baseclass):
         #VARIABLES DE STOCKAGE
        
         self.nbPhase = nbPhases
+        self.list_toIndex[True]*self.nbPhase
         self.list_phase = [il.phaseObject()]*self.nbPhase
         self.list_CIF = [None]*self.nbPhase
         self.list_DB = [None]*self.nbPhase
@@ -37,9 +38,10 @@ class phaseForm(uiclass, baseclass):
         self.otsu = True
         
         #SETTINGS FENETRE
+        self.gB_otsu.setVisible(False) #gB otsu non visible par défaut
         self.gB_SG.setVisible(False) #Savgol non visible par défaut
         
-        self.label_bbtn.setVisible(False) #Bouton chargement otsu non visible par défaut
+        # self.label_bbtn.setVisible(False) #Bouton chargement otsu non visible par défaut
  
         if self.nbPhase == 1 : #Gestion des boutons previous et next
             self.previous_button.setVisible(False)
@@ -52,8 +54,12 @@ class phaseForm(uiclass, baseclass):
         #         self.stackedWSettings(i)
         
         if self.otsu :
-            self.label_bbtn.setVisible(True)
-
+            self.gB_otsu.setVisible(True)
+            self.gB_cristallo.setVisible(False)
+            self.gB_DB.setVisible(False)
+            self.gB_workflow.setVisible(False)
+            self.indexQuestion.setEnabled(False)
+            
             
  
  
@@ -71,6 +77,7 @@ class phaseForm(uiclass, baseclass):
         self.spinBox_window.valueChanged.connect(self.SpinBox_changed)
         self.spinBox_poly.valueChanged.connect(self.SpinBox_changed)
         self.label_bbtn.clicked.connect(self.importLabel)
+        self.indexQuestion.stateChanged.connect(self.fillOrNot)
        
         
     #METHODES    
@@ -78,7 +85,6 @@ class phaseForm(uiclass, baseclass):
     def importLabel(self): 
         # self.defaultIV() 
         options = QFileDialog.Options()
-        #self.StackLoc, self.StackDir = gf.getFilePathDialog("Open map (*.tiff)")
         path, _ = QFileDialog.getOpenFileName(self, f"Select a map :", "", "Tous les fichiers (*.tiff)", options=options)
         
         self.label_map = tf.TiffFile(path).asarray()
@@ -87,6 +93,11 @@ class phaseForm(uiclass, baseclass):
         self.otsuListCreation()
         self.displaylabels(self.thresholded_maps[0])
         self.label_title_.setText("Phase n°: 0")
+        
+        self.gB_cristallo.setVisible(True)
+        self.gB_DB.setVisible(True)
+        self.gB_workflow.setVisible(True)
+        self.indexQuestion.setEnabled(True)
         
     def otsuListCreation (self):
         thresholds = []
@@ -99,6 +110,20 @@ class phaseForm(uiclass, baseclass):
         for threshold in thresholds:
             thresholded_map = np.where(self.label_map == threshold,1,0)
             self.thresholded_maps.append(thresholded_map)
+            
+    def filOrNot (self):
+        i = self.stackedW.currentIndex()
+        if self.indexQuestion.isChecked():
+            self.gB_cristallo.setVisible(True)
+            self.gB_DB.setVisible(True)
+            self.gB_workflow.setVisible(True)
+            self.list_toIndex[i] = True
+        else :
+            self.gB_cristallo.setVisible(False)
+            self.gB_DB.setVisible(False)
+            self.gB_workflow.setVisible(False)
+            self.list_toIndex[i] = False
+            
 
     
     def SpinBox_changed(self):
