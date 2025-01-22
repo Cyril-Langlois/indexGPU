@@ -111,7 +111,7 @@ class phaseForm(uiclass, baseclass):
             thresholded_map = np.where(self.label_map == threshold,1,0)
             self.thresholded_maps.append(thresholded_map)
             
-    def filOrNot (self):
+    def fillOrNot (self):
         i = self.stackedW.currentIndex()
         if self.indexQuestion.isChecked():
             self.gB_cristallo.setVisible(True)
