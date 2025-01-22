@@ -498,8 +498,8 @@ class MainWindow(uiclass, baseclass):
         self.ori = self.indexation[0].nScoresOri[0,:,:,:]
         self.ori = np.swapaxes(self.ori, 1, 2)
                 
-        self.indexation[0].quality_map = np.flip(self.indexation.quality_map, 0) # Flip the array
-        self.indexation[0].quality_map = np.rot90(self.indexation.quality_map, k=1, axes=(1, 0)) # Rotate the array
+        self.indexation[0].quality_map = np.flip(self.indexation[0].quality_map, 0) # Flip the array
+        self.indexation[0].quality_map = np.rot90(self.indexation[0].quality_map, k=1, axes=(1, 0)) # Rotate the array
         
         self.displayQuality(self.indexation[0].quality_map) # Display the quality map
         

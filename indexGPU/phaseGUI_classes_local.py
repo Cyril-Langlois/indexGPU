@@ -249,7 +249,7 @@ class phaseForm(uiclass, baseclass):
         view.setState(state)
         
         # histplot = self.LabelsSeries.getHistogramWidget()
-        self.LabelsSeries.setColorMap(pg.colormap.get('viridis'))
+        self.LabelsSeries.setColorMap(pg.colormap.get('CET-L13'))
         # self.LabelsSeries.setColorMap(pg.colormap())
 
     
