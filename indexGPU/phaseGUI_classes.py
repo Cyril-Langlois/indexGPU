@@ -81,7 +81,7 @@ class phaseForm(uiclass, baseclass):
         self.spinBox_window.valueChanged.connect(self.SpinBox_changed)
         self.spinBox_poly.valueChanged.connect(self.SpinBox_changed)
         self.label_bbtn.clicked.connect(self.importLabel)
-        self.indexQuestion.stateChanged.connect(self.fillOrNot)
+        self.indexQuestion.stateChanged.connect(self.fillOrNot(0))
        
         
     #METHODES    
@@ -114,22 +114,14 @@ class phaseForm(uiclass, baseclass):
         else:
             self.thresholded_maps = []
             for i in range (self.nbPhase):
-                thresholded_map = np.where(self.label_map == i,0.2,0)
+                thresholded_map = np.where(self.label_map == i,1,0)
                 self.thresholded_maps.append(thresholded_map)
-                
-        # thresholds = []
-        
-        # for i in range(0,self.nbPhase):
-        #     var = i
-        #     thresholds.append(i)
-        
-        # self.thresholded_maps = []
-        # for threshold in thresholds:
-        #     thresholded_map = np.where(self.label_map == threshold,1,0)
-        #     self.thresholded_maps.append(thresholded_map)
-            
-    def fillOrNot (self):
-        i = self.stackedW.currentIndex()
+                  
+    def fillOrNot (self, ind):
+        if ind == 0:
+            i = self.stackedW.currentIndex()
+        else:
+            i = ind
         if self.indexQuestion.isChecked():
             self.gB_cristallo.setVisible(True)
             self.gB_DB.setVisible(True)
@@ -141,7 +133,6 @@ class phaseForm(uiclass, baseclass):
             self.gB_workflow.setVisible(False)
             self.list_toIndex[i] = False
             
-
     
     def SpinBox_changed(self):
         i = self.stackedW.currentIndex()
@@ -216,6 +207,7 @@ class phaseForm(uiclass, baseclass):
         
     def saveClicked (self):
         empty = 0
+        print(self.list_toIndex)
         for j in range(self.nbPhase):
             if self.list_toIndex[j]:
                 if self.list_CIF[j] == None or self.list_DB[j] == None or self.list_DB_size[j] == None:

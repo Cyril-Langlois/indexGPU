@@ -404,7 +404,7 @@
                 <item>
                  <widget class="QLabel" name="label_diff">
                   <property name="text">
-                   <string>Differentiation paramter :</string>
+                   <string>Differentiation parameter :</string>
                   </property>
                  </widget>
                 </item>
