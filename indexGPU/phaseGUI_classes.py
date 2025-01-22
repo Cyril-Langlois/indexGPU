@@ -26,7 +26,7 @@ class phaseForm(uiclass, baseclass):
         #VARIABLES DE STOCKAGE
        
         self.nbPhase = nbPhases
-        self.list_toIndex[True]*self.nbPhase
+        self.list_toIndex = [True]*self.nbPhase
         self.list_phase = [il.phaseObject()]*self.nbPhase
         self.list_CIF = [None]*self.nbPhase
         self.list_DB = [None]*self.nbPhase

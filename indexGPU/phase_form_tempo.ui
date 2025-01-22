@@ -256,7 +256,7 @@
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_15">
          <item>
-          <widget class="QGroupBox" name="gBviewing">
+          <widget class="QGroupBox" name="gB_otsu">
            <property name="title">
             <string>Otsu parameters</string>
            </property>
