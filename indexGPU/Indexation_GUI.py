@@ -495,8 +495,11 @@ class MainWindow(uiclass, baseclass):
             self.labelIndex()
             
         # Keep the first and only score, then swapaxes
+        
+        # self.ori before swapaxe : quaternions (axe 0), height (axe 1), width (axe 2)
         self.ori = self.indexation[0].nScoresOri[0,:,:,:]
         self.ori = np.swapaxes(self.ori, 1, 2)
+        # self.ori after swapaxe : quaternions (axe 0), height (axe 1), width (axe 2)
                 
         self.indexation[0].quality_map = np.flip(self.indexation[0].quality_map, 0) # Flip the array
         self.indexation[0].quality_map = np.rot90(self.indexation[0].quality_map, k=1, axes=(1, 0)) # Rotate the array

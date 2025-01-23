@@ -34,117 +34,95 @@ root.withdraw()
 print('hey')
 
 #%% fonctions
-def Display_IPF_GUI(CIFpath, quats, IPF_view = "X"):
+def Display_IPF_GUI(CIFpath, nScoresOri, IPF_view = "X"):
     
-    phases = []
-    phases.append(diffpy.structure.loadStructure(CIFpath))
+    phase = diffpy.structure.loadStructure(CIFpath)
     
     crys = da.functions_crystallography.readcif(CIFpath)
     PhaseName = crys["_chemical_formula_sum"]
     numSG = crys["_space_group_IT_number"]
     PG = symmetry.get_point_group(int(numSG), True).name
-        
+    
+    phaseNum = 1
+    
+    quats = nScoresOri[0, :, :, :]
+    
     if IPF_view == "X":
-        IPFim, xmap = IPF_Z_GUI(quats, PhaseName, PG, phases, Ipf_dir = Vector3d.xvector())
+        IPFim, xmap = IPF_Z_GUI(quats, PhaseName, PG, phase, phaseNum, Ipf_dir = Vector3d.xvector())
     elif IPF_view == "Y":
-        IPFim, xmap = IPF_Z_GUI(quats, PhaseName, PG, phases, Ipf_dir = Vector3d.yvector())
+        IPFim, xmap = IPF_Z_GUI(quats, PhaseName, PG, phase, phaseNum, Ipf_dir = Vector3d.yvector())
     elif IPF_view == "Z":
-        IPFim, xmap = IPF_Z_GUI(quats, PhaseName, PG, phases, Ipf_dir = Vector3d.zvector())
+        IPFim, xmap = IPF_Z_GUI(quats, PhaseName, PG, phase, phaseNum, Ipf_dir = Vector3d.zvector())
 
     return IPFim
 
-def IPF_Z_GUI(quats, PhaseName, PG, phases, Ipf_dir = Vector3d.zvector()):
+def IPF_Z_GUI(simple_quats, PhaseName, PG, phase, phaseNum, Ipf_dir = Vector3d.zvector()):
+
+    # before these operations, quaternions (axe 0), height (axe 10), width (axe 2)
+    simple_quats = np.rot90(simple_quats, 1, (1, 0))
+    simple_quats = np.rot90(simple_quats, 1, (2, 1))
+    # after these operations, height (axe 0), width (axe 1), quaternions (axe 2)
     
-    array2 = np.rot90(quats, 1, (1, 3))
-    QuatCorr = np.rot90(array2, 3, (1, 2))
-    # maintenant on a la largeur selon l'axe 3, la hauteur selon l'axe 2, et les quaternions selon l'axe 4 et le score suivant axe 0
-        
-    width = len(QuatCorr[0, 0, :, 0]) # largeur selon l'axe 1
-    height = len(QuatCorr[0, :, 0, 0]) # hauteur selon l'axe 0
-     
-    # importation de la stack au format orix
-    page = np.zeros((1,height * width, 7))
+    width = len(simple_quats[0, :, 0])
+    height = len(simple_quats[:, 0, 0])
+
+    # from quaternion stack to quaternion along rows
+    page = np.zeros((height * width, 7))
     k = 0
-    for a in range(1):
-        for i in range(height):
-            for j in range(width):
-                page[a,k, 0] = 1
-                page[a,k, 1] = i
-                page[a,k, 2] = j
-                page[a,k, 3] = QuatCorr[a,i, j, 0]
-                page[a,k, 4] = QuatCorr[a,i, j, 1]
-                page[a,k, 5] = QuatCorr[a,i, j, 2]
-                page[a,k, 6] = QuatCorr[a,i, j, 3]
-        
-                k += 1
-        k = 0
- 
-    # ré-importation
-    phase_id = page[:,:, 0]     # tableau contenant [score, n° du pixel, phase dans laquelle est le pixel]
-    y = page[:,:, 1]            # tableau contenant [score, n° du pixel, position y de ce pixel]
-    x = page[:,:, 2]            # tableau contenant [score, n° du pixel, position x de ce pixel]
-    quats = page[:,:, 3:]       # tableau contenant [score, n° du pixel, quaternion associé au pixel]
+
+    for i in range(height):
+        for j in range(width):
+            
+            page[k, 0] = phaseNum
+            page[k, 1] = i
+            page[k, 2] = j
+            page[k, 3] = simple_quats[i, j, 0]
+            page[k, 4] = simple_quats[i, j, 1]
+            page[k, 5] = simple_quats[i, j, 2]
+            page[k, 6] = simple_quats[i, j, 3]
     
-    # conversion Quaternion -> axe-angle car Orix ne permet pas l'import de quaternion expérimentaux !
-    axes = np.zeros((1,len(quats[0]), 3))   # axe 0 inutilisé
-    angles = np.zeros((1,len(quats[0]),1))  # axes 0 et 2 inutilisés
+            k += 1
+
+    phase_id = page[:, 0]     # array storing phase corresponding the quaternion 
+    y = page[:, 1]            # array storing Y position corresponding the quaternion
+    x = page[:, 2]            # array storing X position corresponding the quaternion
+    quats = page[:, 3:]       # array storing quaternions along a row
+    
+    # conversion Quaternion -> axe-angle because Orix does not allow for direct quaternion loading
+    axes_i = np.zeros((len(quats[0]), 3))
+    angles_i = np.zeros((len(quats[0]),1))
     
     for i in range(len(quats[0])):
-        a, b = xa.QuaternionToAxisAngle(quats[0,i, :])
-        axes[0,i, :] = a        # Note : on ne se sert pas pour l'instant de l'axe 0, censé contenir le nScore
-        angles[0,i] = b         # on stocke bien ces données en ligne, une par pixel. Ca marche même si 3 dimensions dans angles
-    
-    rotations = []
-    
-    axes_i = axes[0,:,:]        # simplification de la dimension inutile en axe 0
-    angles_i = angles[0,:,0]    # simplification de la dimension inutile en axe 0 et en axe 2 (qui étaient "fakes")
-    
+        a, b = xa.QuaternionToAxisAngle(quats[i, :])
+        axes[i, :] = a
+        angles[i] = b
+ 
     rotations_i = Rotation.from_axes_angles(axes_i, angles_i, degrees= True)
-    rotations.append(rotations_i)
     
     phase_list = PhaseList(
         names=[PhaseName],
         point_groups=[PG],
-        structures=phases[0])
+        structures=phase)
     
     # Create a CrystalMap instance
-    xmap2 = []
     
-    xmap2_i = CrystalMap(rotations=rotations[0],phase_id=phase_id[0,:],x=x,y=y,phase_list=phase_list)
+    xmap2_i = CrystalMap(rotations=rotations_i, phase_id=phase_id, x=x, y=y, phase_list=phase_list)
     xmap2_i.scan_unit = "um"
-    xmap2.append(xmap2_i)
 
-    # information pour utiliser le code couleur spécifique au groupe ponctuel
-    pg_laue = xmap2[0].phases[1].point_group.laue
-    ipf_key = orixPlot.IPFColorKeyTSL(pg_laue)
-    
-    o_Cu = []
+    # select a correct color code according to the Point Group
+    pg_laue = xmap2_i.phases[1].point_group.laue
 
     Var_o_Cu = xmap2[0][PhaseName].orientations
-    o_Cu.append(Var_o_Cu)
     
     # Orientation colors
-    Ipf_dir = Ipf_dir
     ipf_key = orixPlot.IPFColorKeyTSL(pg_laue, direction=Ipf_dir)
-    
-    rgb=[]
 
     rgb_i = ipf_key.orientation2color(o_Cu[0])
-    rgb.append(rgb_i)
         
-    # rgb est l'image IPF sous forme d'un tableau numpy correctement orienté
-    # rgb est flatten, il faut reshaper
-    rgb = np.dstack(rgb)
-    rgb = np.reshape(rgb,(height, width, 3,1))
+    # rgb is flatten, it must be reshaped to be displayed in the GUI
+    rgb = np.reshape(rgb_i,(height, width, 3))
 
-    rgb = np.swapaxes(rgb, 0, 3)
-
-    rgb = np.swapaxes(rgb, 2, 3)
-    rgb = np.flip(rgb, 0)
-
-    # Affichage map 
-    rgb = rgb[0,:,:,:]
     rgb = np.flip(rgb,1)
     rgb = np.rot90(rgb)
     
-    return rgb, xmap2
+    return rgb, xmap2_i
