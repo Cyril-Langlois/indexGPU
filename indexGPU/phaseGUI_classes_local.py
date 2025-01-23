@@ -11,7 +11,8 @@ import indexGPU.Indexation_lib as il
 
 import numpy as np
 import tifffile as tf
-
+import h5py
+from inichord import General_Functions as gf
 
 ##############################  the following classes are used for indexation  ##########################################
 path2thisFile = abspath(getsourcefile(lambda:0))
@@ -34,6 +35,7 @@ class phaseForm(uiclass, baseclass):
         self.list_CIF = [None]*self.nbPhase
         self.list_DB = [None]*self.nbPhase
         self.list_DB_size = [None]*self.nbPhase
+        self.list_DB_size_max = [10_000_000]*self.nbPhase
         self.list_diff = [0]*self.nbPhase
         self.list_SG = [False]*self.nbPhase
         self.list_poly = [2]*self.nbPhase
@@ -80,6 +82,14 @@ class phaseForm(uiclass, baseclass):
        
         
     #METHODES    
+    def setDBSizeMax(self):
+        f = h5py.File(self.list_DB[self.page], 'r')
+        listKeys = gf.get_dataset_keys(f)
+        listChunkArrays = []
+        for key in listKeys:
+            if "DataChunk" in key:
+                listChunkArrays.append(key)
+        self.list_DB_size_max[self.page] = 250_000*len(listChunkArrays)
         
     def importLabel(self): 
         # self.defaultIV() 
@@ -137,7 +147,11 @@ class phaseForm(uiclass, baseclass):
             self.list_poly[self.page] = self.spinBox_poly.value()
            
     def DB_Size(self, text):
-        self.list_DB_size[self.page] = self.text_DB_size.text()
+        if int(text) <= self.list_DB_size_max[self.page] :
+            self.list_DB_size[self.page] = self.text_DB_size.text()
+        else :
+            # self.list_DB_size[self.page] = self.list_DB_size_max[self.page]
+            self.text_DB_size.setText(str(self.list_DB_size_max[self.page]))
    
     def savgolParam(self):
         if self.gB_SG.isVisible():
@@ -238,6 +252,8 @@ class phaseForm(uiclass, baseclass):
             self.text_DB_file.setText(path)
             self.list_DB[self.page] = path
             #self.text_DB_size = taille de la DB du fichier choisi
+            self.setDBSizeMax()
+            self.text_DB_size.setText(str(self.list_DB_size_max[self.page]))
     
     def displaylabels(self, series): # Display of label map
         self.LabelsSeries.ui.roiBtn.hide()
@@ -250,7 +266,8 @@ class phaseForm(uiclass, baseclass):
         
         # histplot = self.LabelsSeries.getHistogramWidget()
         self.LabelsSeries.setColorMap(pg.colormap.get('CET-L13'))
-        # self.LabelsSeries.setColorMap(pg.colormap())
+
+       
 
     
 

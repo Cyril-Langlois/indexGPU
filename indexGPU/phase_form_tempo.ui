@@ -250,7 +250,7 @@
             <item>
              <widget class="QPushButton" name="label_bbtn">
               <property name="text">
-               <string>Open label map</string>
+               <string>Open Otsu Map</string>
               </property>
              </widget>
             </item>
