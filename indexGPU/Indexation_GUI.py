@@ -59,6 +59,9 @@ class MainWindow(uiclass, baseclass):
         self.crosshair_v3 = pg.InfiniteLine(angle=90, movable=False, pen=self.parent.color5)
         self.crosshair_h3 = pg.InfiniteLine(angle=0, movable=False, pen=self.parent.color5)
         
+        self.crosshair_v4 = pg.InfiniteLine(angle=90, movable=False, pen=self.parent.color5)
+        self.crosshair_h4 = pg.InfiniteLine(angle=0, movable=False, pen=self.parent.color5)
+        
         self.plotIt = self.profiles.getPlotItem()
         self.plotIt.addLine(x = self.expSeries.currentIndex) # Add vertical line to the CHORD profile widget
         
@@ -70,6 +73,9 @@ class MainWindow(uiclass, baseclass):
 
         self.proxy3 = pg.SignalProxy(self.IPF_serie.scene.sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
         self.proxy6 = pg.SignalProxy(self.IPF_serie.ui.graphicsView.scene().sigMouseClicked, rateLimit=60, slot=self.mouseClick)
+        
+        self.proxy7 = pg.SignalProxy(self.PhaseMap.scene.sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
+        self.proxy8 = pg.SignalProxy(self.PhaseMap.ui.graphicsView.scene().sigMouseClicked, rateLimit=60, slot=self.mouseClick)
 
         self.expSeries.timeLine.sigPositionChanged.connect(self.drawCHORDprofiles)
         
@@ -442,7 +448,45 @@ class MainWindow(uiclass, baseclass):
         
         # Recreate an h5 file with the new data
         self.savingRes_cluster()
-
+        
+    def phase_discrimination(self):
+        #Discrimination based on quality maps
+        qualityShape = self.indexation[0].nScoresDist.shape
+        quality = np.zeros ((self.nPhases, qualityShape[1], qualityShape[2]))
+        
+        for i in range (self.nPhases):# nPhase - 1 ?
+            quality[i, :, :] = self.indexation[i].quality_map
+        self.phase_map = np.argmax(quality, axis = 0) # tableau des indices (=numéro de phase) où la quality map est la plus grande = carte des phases
+        
+        # Initialisation des éléments
+        self.oriDisc = np.copy(self.indexation[0].nScoresOri)
+        self.quality_final = np.copy(self.indexation[0].quality_map)
+        self.dist = np.copy(self.indexation[0].nScoresDist)
+        self.theo_stack = np.copy(self.indexation[0].nScoresStack[0, :, :, :])
+        self.stack_mod = np.copy(self.indexation[0].Treatment_theo_prof[0, :, :, :])
+        self.IPF_final_X = np.copy(IPF_computation.Display_IPF_GUI(self.indexation[i].CIF, self.indexation[i].nScoresOri, IPF_view='X'))
+        self.IPF_final_Y = np.copy(IPF_computation.Display_IPF_GUI(self.indexation[i].CIF, self.indexation[i].nScoresOri, IPF_view='Y'))
+        self.IPF_final_Z = np.copy(IPF_computation.Display_IPF_GUI(self.indexation[i].CIF, self.indexation[i].nScoresOri, IPF_view='Z'))
+        
+        
+        listCoordPhases = []
+        for i in range (self.nPhases):# nPhase - 1 ?
+            mask = np.argwhere(self.phase_map == i)
+            listCoordPhases.append(mask)
+            IPF_map_x = IPF_computation.Display_IPF_GUI(self.indexation[i].CIF, self.indexation[i].nScoresOri, IPF_view='X')
+            IPF_map_y = IPF_computation.Display_IPF_GUI(self.indexation[i].CIF, self.indexation[i].nScoresOri, IPF_view='Y')
+            IPF_map_z = IPF_computation.Display_IPF_GUI(self.indexation[i].CIF, self.indexation[i].nScoresOri, IPF_view='Z')
+            for c in mask:
+                self.oriDisc[:, :, c[0], c[1]] = self.indexation[i].nScoresOri[:, :, c[0], c[1]]
+                self.quality_final[c[0], c[1]] = self.indexation[i].quality_map[c[0], c[1]]
+                self.dist[:, c[0], c[1]] = self.indexation[i].nScoresDist[:, c[0], c[1]]
+                self.theo_stack[:, c[0], c[1]] = self.indexation[i].nScoresStack[0, :, c[0], c[1]]
+                self.stack_mod[:, c[0], c[1]] = self.indexation[i].Treatment_theo_prof[0, :, c[0], c[1]]
+                self.IPF_final_X[c[0], c[1], :] = IPF_map_x[c[0], c[1], :]
+                self.IPF_final_Y[c[0], c[1], :] = IPF_map_y[c[0], c[1], :]
+                self.IPF_final_Z[c[0], c[1], :] = IPF_map_z[c[0], c[1], :]
+                
+            
     def Run_indexation(self):
         
         self.progressBar.setVisible(True) # The progress bar is shown for clarity
@@ -451,6 +495,10 @@ class MainWindow(uiclass, baseclass):
         self.Info_box.clear() # Clear the information box
         self.methodChoice = self.PresetBox.currentText() # Choice between diff0 or diff1
         self.indexation =  []
+        
+        if self.nPhases > 1 :
+            self.label_phases.setVisible(True) # Show label phasemap
+            self.PhaseMap.setVisible(True) # Show phase map
         
 
         # self.savgol_window = self.window_SpinBox.value() # Window length of the filter
@@ -479,7 +527,6 @@ class MainWindow(uiclass, baseclass):
         #                                             normType = "centered euclidian", nbSTACK=self.BatchProfiles_value,
         #                                             nbDB = self.BatchDatabase_value)
         for i in range(self.nPhases):
-            
             self.indexation.append(indGPU.IndexationGPUderiv(self,self.preInd.Stack, 
                                                         self.PathDir, self.preInd.phaseList[i].DatabaseLoc, 
                                                         self.preInd.phaseList[i].CifLoc, 
@@ -490,21 +537,27 @@ class MainWindow(uiclass, baseclass):
         # Run indexation matching step
         for i in range(self.nPhases):
             self.indexation[i].runIndexation()
-            
+        
+        self.phase_discrimination()
+        
         if self.Cluster_index.isChecked(): # Specific to cluster indexation 
             self.labelIndex()
             
         # Keep the first and only score, then swapaxes
         
         # self.ori before swapaxe : quaternions (axe 0), height (axe 1), width (axe 2)
-        self.ori = self.indexation[0].nScoresOri[0,:,:,:]
+        # self.ori = self.indexation[0].nScoresOri[0,:,:,:]
+        self.ori = self.oriDisc
         self.ori = np.swapaxes(self.ori, 1, 2)
         # self.ori after swapaxe : quaternions (axe 0), height (axe 1), width (axe 2)
                 
-        self.indexation[0].quality_map = np.flip(self.indexation[0].quality_map, 0) # Flip the array
-        self.indexation[0].quality_map = np.rot90(self.indexation[0].quality_map, k=1, axes=(1, 0)) # Rotate the array
+        # self.indexation[0].quality_map = np.flip(self.indexation[0].quality_map, 0) # Flip the array
+        # self.indexation[0].quality_map = np.rot90(self.indexation[0].quality_map, k=1, axes=(1, 0)) # Rotate the array
+        # self.displayQuality(self.indexation[0].quality_map) # Display the quality map
+        self.quality_final = np.flip(self.quality_final, 0) # Flip the array
+        self.quality_final = np.rot90(self.quality_final, k=1, axes=(1, 0)) # Rotate the array
+        self.displayQuality(self.quality_final) # Display the quality map
         
-        self.displayQuality(self.indexation[0].quality_map) # Display the quality map
         
         self.expSeries.setVisible(True) # Show the image serie display window
         
@@ -517,17 +570,19 @@ class MainWindow(uiclass, baseclass):
         QApplication.processEvents()
         
         # Flip and rotate self.nScoresDist to be homogenenous (for computation)
-        self.indexation[0].nScoresDist = np.flip(self.indexation[0].nScoresDist, 1)
-        self.indexation[0].nScoresDist = np.rot90(self.indexation[0].nScoresDist, k=1, axes=(2, 1))
+        # self.indexation[0].nScoresDist = np.flip(self.indexation[0].nScoresDist, 1)
+        # self.indexation[0].nScoresDist = np.rot90(self.indexation[0].nScoresDist, k=1, axes=(2, 1))
+        self.dist = np.flip(self.dist, 1)
+        self.dist = np.rot90(self.dist, k=1, axes=(2, 1))
         
         # For viewing data diff or not OR theo profiles : extract of the first and only score then flip and rotate       
         self.Current_stack = self.indexation[0].rawImage # Extract the stack of images
         
-        self.theo_stack = self.indexation[0].nScoresStack[0, :, :, :]
+        # self.theo_stack = self.indexation[0].nScoresStack[0, :, :, :]
         self.theo_stack = np.flip(self.theo_stack, 1)
         self.theo_stack = np.rot90(self.theo_stack, k=1, axes=(2, 1))
         
-        self.stack_mod = self.indexation[0].Treatment_theo_prof[0, :, :, :]
+        # self.stack_mod = self.indexation[0].Treatment_theo_prof[0, :, :, :]
         self.stack_mod = np.flip(self.stack_mod, 1)
         self.stack_mod = np.rot90(self.stack_mod, k=1, axes=(2, 1))
         
@@ -536,11 +591,22 @@ class MainWindow(uiclass, baseclass):
         self.expStack_mod = np.rot90(self.expStack_mod, k=1, axes=(2, 1))
         
         # Display of IPF map 
-        self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Z')
+        # self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Z')
+        self.IPF_map = self.IPF_final_Z
         self.IPF_map = np.flip(self.IPF_map,1)
         self.IPF_map = np.rot90(self.IPF_map)
-         
-        self.displayIPFmap(self.IPF_map)    
+        
+        self.displayIPFmap(self.IPF_map)   
+        
+        # Display of phase_map
+        # self.phase_map = np.flip(self.phase_map,1)
+        # self.phase_map = np.rot90(self.phase_map)
+        # self.displayPhaseMap(self.phase_map)
+        self.phase_map = np.flip(self.phase_map,1)
+        self.phase_map = np.rot90(self.phase_map)
+        self.displayPhaseMap(self.phase_map)
+        
+        
         self.progressBar.setVisible(False) # The progress bar is hidden for clarity
         
         
@@ -581,21 +647,33 @@ class MainWindow(uiclass, baseclass):
     def Change_IPFView(self):
         self.OriChoice = self.OriBox.currentText() # Choice between X-Y-Z
         
+        # if self.OriChoice == "IPF-X":
+            # self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='X')
+            # self.IPF_map = np.flip(self.IPF_map,1)
+            # self.IPF_map = np.rot90(self.IPF_map)
+            # self.displayIPFmap(self.IPF_map)
+        # elif self.OriChoice == "IPF-Y":
+            # self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Y')
+            # self.IPF_map = np.flip(self.IPF_map,1)
+            # self.IPF_map = np.rot90(self.IPF_map)
+            # self.displayIPFmap(self.IPF_map)
+        # elif self.OriChoice == "IPF-Z":
+            # self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Z')
+            # self.IPF_map = np.flip(self.IPF_map,1)
+            # self.IPF_map = np.rot90(self.IPF_map)
+            # self.displayIPFmap(self.IPF_map)
+        
         if self.OriChoice == "IPF-X":
-            self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='X')
-            self.IPF_map = np.flip(self.IPF_map,1)
-            self.IPF_map = np.rot90(self.IPF_map)
-            self.displayIPFmap(self.IPF_map)
+            self.IPF_map = self.IPF_final_X
         elif self.OriChoice == "IPF-Y":
-            self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Y')
-            self.IPF_map = np.flip(self.IPF_map,1)
-            self.IPF_map = np.rot90(self.IPF_map)
-            self.displayIPFmap(self.IPF_map)
+            self.IPF_map = self.IPF_final_Y
         elif self.OriChoice == "IPF-Z":
-            self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Z')
-            self.IPF_map = np.flip(self.IPF_map,1)
-            self.IPF_map = np.rot90(self.IPF_map)
-            self.displayIPFmap(self.IPF_map)
+            self.IPF_map = self.IPF_final_Z
+            
+        self.IPF_map = np.flip(self.IPF_map,1)
+        self.IPF_map = np.rot90(self.IPF_map)
+        self.displayIPFmap(self.IPF_map)
+        
         
     def NCC_computation(self,Theo_stack,rawImage, batchsize = 5000, Windows = 18): # Normalized covariance correlation calculation
         var,batch_nbr = self.find_batch_nbr(len(Theo_stack[0]),len(Theo_stack[0][0]),batchsize) # Find optimal batch for cupy uses
@@ -685,9 +763,12 @@ class MainWindow(uiclass, baseclass):
         self.progressBar.setValue(self.prgbar)
 
     def Save_results(self):
-        IPF_map_X = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='X')
-        IPF_map_Y = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Y')
-        IPF_map_Z = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Z')
+        # IPF_map_X = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='X')
+        # IPF_map_Y = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Y')
+        # IPF_map_Z = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Z')
+        IPF_map_X = self.IPF_final_X
+        IPF_map_Y = self.IPF_final_Y
+        IPF_map_Z = self.IPF_final_Z
         
         IPF_map_X = (IPF_map_X * 255).astype(np.uint8)
         IPF_map_Y = (IPF_map_Y * 255).astype(np.uint8)
@@ -695,17 +776,25 @@ class MainWindow(uiclass, baseclass):
     
         # Images saving step
         if self.flag_folder == 1:
-            tf.imwrite(self.PathDir + '/Quality_map.tiff', np.rot90(np.flip(self.indexation[0].quality_map, 0), k=1, axes=(1, 0)))
-            tf.imwrite(self.PathDir + '/Distance_map.tiff',np.rot90(np.flip(1-self.indexation[0].nScoresDist, 1), k=1, axes=(2, 1)))
+            # tf.imwrite(self.PathDir + '/Quality_map.tiff', np.rot90(np.flip(self.indexation[0].quality_map, 0), k=1, axes=(1, 0)))
+            # tf.imwrite(self.PathDir + '/Distance_map.tiff',np.rot90(np.flip(1-self.indexation[0].nScoresDist, 1), k=1, axes=(2, 1)))
+            tf.imwrite(self.PathDir + '/Quality_map.tiff', np.rot90(np.flip(self.quality_final, 0), k=1, axes=(1, 0)))
+            tf.imwrite(self.PathDir + '/Distance_map.tiff',np.rot90(np.flip(1-self.dist, 1), k=1, axes=(2, 1)))
             tf.imwrite(self.PathDir + '/IPF_X.tiff',IPF_map_X)
             tf.imwrite(self.PathDir + '/IPF_Y.tiff',IPF_map_Y)
             tf.imwrite(self.PathDir + '/IPF_Z.tiff',IPF_map_Z)
+            if self.nPhases > 1:
+                tf.imwrite(self.PathDir + '/Phase_map.tiff', self.phase_map)
         else: 
-            tf.imwrite(self.StackDir + '/Quality_map.tiff', np.rot90(np.flip(self.indexation[0].quality_map, 0), k=1, axes=(1, 0)))
-            tf.imwrite(self.StackDir + '/Distance_map.tiff',np.rot90(np.flip(1-self.indexation[0].nScoresDist, 1), k=1, axes=(2, 1)))
+            # tf.imwrite(self.StackDir + '/Quality_map.tiff', np.rot90(np.flip(self.indexation[0].quality_map, 0), k=1, axes=(1, 0)))
+            # tf.imwrite(self.StackDir + '/Distance_map.tiff',np.rot90(np.flip(1-self.indexation[0].nScoresDist, 1), k=1, axes=(2, 1)))
+            tf.imwrite(self.StackDir + '/Quality_map.tiff', self.quality_final)
+            tf.imwrite(self.StackDir + '/Distance_map.tiff',self.dist)
             tf.imwrite(self.StackDir + '/IPF_X.tiff',IPF_map_X)
             tf.imwrite(self.StackDir + '/IPF_Y.tiff',IPF_map_Y)
             tf.imwrite(self.StackDir + '/IPF_Z.tiff',IPF_map_Z)
+            if self.nPhases > 1:
+                tf.imwrite(self.StackDir + '/Phase_map.tiff', self.phase_map)
             
         # Finished message
         self.popup_message("indexation[0]","Saving process is over.",'icons/indexation[0]_icon.png')
@@ -717,14 +806,17 @@ class MainWindow(uiclass, baseclass):
         if not self.mouseLock.isChecked():
             if self.expSeries.view.sceneBoundingRect().contains(pos)\
                 or self.QualSeries.view.sceneBoundingRect().contains(pos)\
-                or self.IPF_serie.view.sceneBoundingRect().contains(pos):
+                or self.IPF_serie.view.sceneBoundingRect().contains(pos)\
+                or self.PhaseMap.view.sceneBoundingRect().contains(pos):
     
                 if sender == self.proxy1:
                     item = self.expSeries.view
                 elif sender == self.proxy2:
                     item = self.QualSeries.view    
                 elif sender == self.proxy3:
-                    item = self.IPF_serie.view   
+                    item = self.IPF_serie.view
+                elif sender == self.proxy7:
+                    item = self.PhaseMap.view
     
                 mousePoint = item.mapSceneToView(pos) 
                      
@@ -736,12 +828,16 @@ class MainWindow(uiclass, baseclass):
                 
                 self.crosshair_v3.setPos(mousePoint.x())
                 self.crosshair_h3.setPos(mousePoint.y())
+                
+                self.crosshair_v4.setPos(mousePoint.x())
+                self.crosshair_h4.setPos(mousePoint.y())
     
             try:
                 self.x = int(mousePoint.x())
                 self.y = int(mousePoint.y())
                 
-                self.label_Quality.setText("Quality indice: " + str(np.round(self.indexation[0].quality_map[self.x, self.y],1)) + "%")
+                # self.label_Quality.setText("Quality indice: " + str(np.round(self.indexation[0].quality_map[self.x, self.y],1)) + "%")
+                self.label_Quality.setText("Quality indice: " + str(np.round(self.quality_final[self.x, self.y],1)) + "%")
             except:
                 pass
 
@@ -766,14 +862,17 @@ class MainWindow(uiclass, baseclass):
 
         if self.expSeries.view.sceneBoundingRect().contains(posQpoint)\
             or self.QualSeries.view.sceneBoundingRect().contains(posQpoint)\
-            or self.IPF_serie.view.sceneBoundingRect().contains(posQpoint):
+            or self.IPF_serie.view.sceneBoundingRect().contains(posQpoint)\
+            or self.PhaseMap.view.sceneBoundingRect().contains(posQpoint):
                 
             if sender == self.proxy4:
                 item = self.expSeries.view
             elif sender == self.proxy5:
                 item = self.QualSeries.view
             elif sender == self.proxy6:
-                item = self.IPF_serie.view  
+                item = self.IPF_serie.view
+            elif sender == self.proxy8:
+                item = self.PhaseMap.view
             
             mousePoint = item.mapSceneToView(posQpoint) 
 
@@ -785,6 +884,9 @@ class MainWindow(uiclass, baseclass):
             
             self.crosshair_v3.setPos(mousePoint.x())
             self.crosshair_h3.setPos(mousePoint.y())
+            
+            self.crosshair_v4.setPos(mousePoint.x())
+            self.crosshair_h4.setPos(mousePoint.y())
                  
             self.x = int(mousePoint.x())
             self.y = int(mousePoint.y())
@@ -984,7 +1086,27 @@ class MainWindow(uiclass, baseclass):
         self.IPF_serie.ui.menuBtn.hide()
         
         self.IPF_serie.setImage(Series)
-        self.IPF_serie.autoRange()    
+        self.IPF_serie.autoRange()
+        
+    def displayPhaseMap(self, Series):
+        self.PhaseMap.addItem(self.crosshair_v4, ignoreBounds=True)
+        self.PhaseMap.addItem(self.crosshair_h4, ignoreBounds=True) 
+        
+        self.PhaseMap.ui.histogram.hide()
+        self.PhaseMap.ui.roiBtn.hide()
+        self.PhaseMap.ui.menuBtn.hide()
+        
+        view = self.PhaseMap.getView()
+        state = view.getState()        
+        self.PhaseMap.setImage(Series) 
+        view.setState(state)
+        view.setBackgroundColor(self.parent.color1)
+        
+        histplot = self.PhaseMap.getHistogramWidget()
+        histplot.setBackground(self.parent.color1)
+        
+        self.PhaseMap.setColorMap(pg.colormap.getFromMatplotlib('copper'))
+        self.PhaseMap.autoRange()
         
     def defaultIV(self):
         # Image series

@@ -13,6 +13,8 @@ import numpy as np
 import tifffile as tf
 import h5py
 from inichord import General_Functions as gf
+# import matplotlib
+# from matplotlib.colors import ListedColormap
 
 ##############################  the following classes are used for indexation  ##########################################
 path2thisFile = abspath(getsourcefile(lambda:0))
@@ -31,7 +33,6 @@ class phaseForm(uiclass, baseclass):
         self.page = 0
         self.nbPhase = nbPhases
         self.list_toIndex = [True]*self.nbPhase
-        self.list_phase = [il.phaseObject()]*self.nbPhase
         self.list_CIF = [None]*self.nbPhase
         self.list_DB = [None]*self.nbPhase
         self.list_DB_size = [None]*self.nbPhase
@@ -44,23 +45,25 @@ class phaseForm(uiclass, baseclass):
         
         #SETTINGS FENETRE
         self.label_title_.setText(f"Phase n°: {self.page + 1} / {self.nbPhase} ")
-        self.indexQuestion.setTristate(False)
         self.gB_otsu.setVisible(False) #gB otsu non visible par défaut
         self.gB_SG.setVisible(False) #Savgol non visible par défaut
- 
-        if self.nbPhase == 1 : #Gestion des boutons previous et next
+        
+        #Single or multiphase
+        if self.nbPhase == 1 :
             self.previous_button.setVisible(False)
             self.next_button.setVisible(False)
-       
+        else :
+            self.previous_button.setEnabled(False)
+            self.save_button.setEnabled(False)
+        
+        # Otsu case
         if self.otsu :
             self.gB_otsu.setVisible(True)
             self.gB_cristallo.setVisible(False)
             self.gB_DB.setVisible(False)
             self.gB_workflow.setVisible(False)
             self.indexQuestion.setEnabled(False)
-            self.save_button.setEnabled(False)
-            if self.nbPhase > 1 : #Gestion des boutons previous et next
-                self.previous_button.setEnabled(False)
+            if self.nbPhase > 1 : 
                 self.next_button.setEnabled(False)
 
 
@@ -147,6 +150,8 @@ class phaseForm(uiclass, baseclass):
             self.list_poly[self.page] = self.spinBox_poly.value()
            
     def DB_Size(self, text):
+        if text == '':
+            text = '0'
         if int(text) <= self.list_DB_size_max[self.page] :
             self.list_DB_size[self.page] = self.text_DB_size.text()
         else :
@@ -208,6 +213,7 @@ class phaseForm(uiclass, baseclass):
             self.indexQuestion.setChecked(self.list_toIndex[self.page])
         
     def saveClicked (self):
+        # Test qui vérifie si toutes les données ont été rentrées
         empty = 0
         for i in range(self.nbPhase):
             if self.list_toIndex[i]:
@@ -216,19 +222,23 @@ class phaseForm(uiclass, baseclass):
                     
         if empty > 0:
             self.showMsgBox("At least one file or data base size is missing.") 
-        else :
+        else : # Enregistrement des données
             for i in range (self.nbPhase):
-                #MAJ des attributs d'une phase i
-                self.list_phase[i].CifLoc = self.list_CIF[i]
-                self.list_phase[i].DatabaseLoc = self.list_DB[i]
-                self.list_phase[i].DB_Size = self.list_DB_size[i]
-                self.list_phase[i].diff = self.list_diff[i]
-                self.list_phase[i].SG = self.list_SG[i]
-                self.list_phase[i].SG_poly = self.list_poly[i]
-                self.list_phase[i].SG_win = self.list_window[i]
-                self.list_phase[i].workflowCreation()
+                # Création des objets phase
+                phaseO = il.phaseObject()
+ 
+                # MAJ des attributs d'une phase i
+                phaseO.CifLoc = self.list_CIF[i]
+                phaseO.DatabaseLoc = self.list_DB[i]
+                phaseO.DB_Size = self.list_DB_size[i]
+                phaseO.diff = self.list_diff[i]
+                phaseO.SG = self.list_SG[i]
+                phaseO.SG_poly = self.list_poly[i]
+                phaseO.SG_win = self.list_window[i]
+                phaseO.workflowCreation()
+                
                 #ajout de la phase i dans la liste de phases parente
-                self.parent.phaseList.append(self.list_phase[i])
+                self.parent.phaseList.append(phaseO) 
 
             self.close()
     
@@ -264,8 +274,10 @@ class phaseForm(uiclass, baseclass):
         self.LabelsSeries.setImage(series) 
         view.setState(state)
         
-        # histplot = self.LabelsSeries.getHistogramWidget()
-        self.LabelsSeries.setColorMap(pg.colormap.get('CET-L13'))
+        # self.LabelsSeries.setColorMap(pg.colormap.get('CET-L13'))
+        self.LabelsSeries.setColorMap(pg.colormap.getFromMatplotlib('copper'))
+        # cmap = matplotlib.colors.ListedColormap([[240, 162, 137],[242, 110, 68]])
+        # self.LabelsSeries.setColorMap(pg.colormap.get(cmap))
 
        
 
