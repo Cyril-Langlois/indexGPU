@@ -6,34 +6,39 @@ import pyqtgraph as pg
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLineEdit, QCheckBox, QSpinBox, QGroupBox, QTextEdit, QHBoxLayout, QVBoxLayout, QDialog, QRadioButton, QFileDialog, QLabel, QMessageBox
 from PyQt5.QtCore import Qt, QTimer, QSize
-#from indexGPU import Indexation_lib as il
-import indexGPU.Indexation_lib as il
+# from indexGPU import Indexation_lib as il
+# import indexGPU.Indexation_lib as il
+import Indexation_lib as il
 
 import numpy as np
 import tifffile as tf
 import h5py
 from inichord import General_Functions as gf
-# import matplotlib
-# from matplotlib.colors import ListedColormap
+import Dans_Diffraction as da
 
 ##############################  the following classes are used for indexation  ##########################################
 path2thisFile = abspath(getsourcefile(lambda:0))
 uiclass, baseclass = pg.Qt.loadUiType(os.path.dirname(path2thisFile) + "/phase_form_tempo.ui")
 
 class phaseForm(uiclass, baseclass):
-    def __init__(self, parent, nbPhases):
+    def __init__(self, parent, nbPhases, otsu):
         super().__init__()
         self.setWindowTitle("Phases parameters")
         self.setupUi(self)
         self.parent = parent
 
         
-        #VARIABLES DE STOCKAGE
+        #INITIALISATION
         
         self.page = 0
         self.nbPhase = nbPhases
+        self.otsu = otsu
+        
+        #VARIABLES DE STOCKAGE
+        
         self.list_toIndex = [True]*self.nbPhase
         self.list_CIF = [None]*self.nbPhase
+        self.list_phase_name = [""]*self.nbPhase
         self.list_DB = [None]*self.nbPhase
         self.list_DB_size = [None]*self.nbPhase
         self.list_DB_size_max = [10_000_000]*self.nbPhase
@@ -41,7 +46,6 @@ class phaseForm(uiclass, baseclass):
         self.list_SG = [False]*self.nbPhase
         self.list_poly = [2]*self.nbPhase
         self.list_window = [3]*self.nbPhase
-        self.otsu = False
         
         #SETTINGS FENETRE
         self.label_title_.setText(f"Phase n°: {self.page + 1} / {self.nbPhase} ")
@@ -84,8 +88,12 @@ class phaseForm(uiclass, baseclass):
         self.indexQuestion.stateChanged.connect(self.fillOrNot)
        
         
-    #METHODES    
+    #METHODES
+
     def setDBSizeMax(self):
+        # Reads the DB file and sets the maximum value to enter in the DB-size to the number of profiles
+        # that the given file contains
+        
         f = h5py.File(self.list_DB[self.page], 'r')
         listKeys = gf.get_dataset_keys(f)
         listChunkArrays = []
@@ -94,8 +102,13 @@ class phaseForm(uiclass, baseclass):
                 listChunkArrays.append(key)
         self.list_DB_size_max[self.page] = 250_000*len(listChunkArrays)
         
+    def setPhaseName(self):
+        crys = da.functions_crystallography.readcif(self.list_CIF[self.page])
+        self.list_phase_name[self.page] = crys["_chemical_formula_sum"]
+        
     def importLabel(self): 
-        # self.defaultIV() 
+        # Loads the otsu map
+        
         options = QFileDialog.Options()
         path, _ = QFileDialog.getOpenFileName(self, f"Select a map :", "", "Tous les fichiers (*.tiff)", options=options)
         
@@ -116,6 +129,9 @@ class phaseForm(uiclass, baseclass):
             self.next_button.setEnabled(True)
         
     def otsuListCreation (self):
+        # Checks if the entered ostu matches with the given number of phases
+        # Creates a list of maps with 2 values : 1 for the current phase to display, 0 for the others
+        
         nbClass = np.max(self.label_map) + 1
         if nbClass != self.nbPhase:
             self.showMsgBox("Number of class in otsu map is different from the number of phases.")
@@ -126,6 +142,8 @@ class phaseForm(uiclass, baseclass):
                 self.thresholded_maps.append(thresholded_map)
                   
     def fillOrNot (self):
+        # Updates the list telling the choice to index a phase or not
+        
         if self.indexQuestion.isChecked():
             self.gB_cristallo.setVisible(True)
             self.gB_DB.setVisible(True)
@@ -136,9 +154,7 @@ class phaseForm(uiclass, baseclass):
             self.gB_cristallo.setVisible(False)
             self.gB_DB.setVisible(False)
             self.gB_workflow.setVisible(False)
-            self.list_toIndex[self.page] = False
-
-            
+            self.list_toIndex[self.page] = False          
     
     def SpinBox_changed(self):
         sender = self.sender()
@@ -174,6 +190,7 @@ class phaseForm(uiclass, baseclass):
         self.page -= 1
         print("current page is :", self.page + 1)
         self.text_CIF.setText(self.list_CIF[self.page])
+        self.label_CIF.setText("CIF file : " + self.list_phase_name[self.page])
         self.text_DB_file.setText(self.list_DB[self.page])
         self.text_DB_size.setText(self.list_DB_size[self.page])
         self.spinBox_diff.setValue(self.list_diff[self.page])
@@ -195,6 +212,7 @@ class phaseForm(uiclass, baseclass):
         self.page += 1
         print("current page is :", self.page + 1)
         self.text_CIF.setText(self.list_CIF[self.page])
+        self.label_CIF.setText("CIF file : " + self.list_phase_name[self.page])
         self.text_DB_file.setText(self.list_DB[self.page])
         self.text_DB_size.setText(self.list_DB_size[self.page])
         self.spinBox_diff.setValue(self.list_diff[self.page])
@@ -213,7 +231,7 @@ class phaseForm(uiclass, baseclass):
             self.indexQuestion.setChecked(self.list_toIndex[self.page])
         
     def saveClicked (self):
-        # Test qui vérifie si toutes les données ont été rentrées
+        # Checks if the user has entered all the values
         empty = 0
         for i in range(self.nbPhase):
             if self.list_toIndex[i]:
@@ -221,10 +239,12 @@ class phaseForm(uiclass, baseclass):
                     empty += 1
                     
         if empty > 0:
-            self.showMsgBox("At least one file or data base size is missing.") 
-        else : # Enregistrement des données
+            self.showMsgBox("At least one file or data base size is missing.")
+            
+        # Saving the data    
+        else :
             for i in range (self.nbPhase):
-                # Création des objets phase
+                # Phase objects creation
                 phaseO = il.phaseObject()
  
                 # MAJ des attributs d'une phase i
@@ -236,10 +256,16 @@ class phaseForm(uiclass, baseclass):
                 phaseO.SG_poly = self.list_poly[i]
                 phaseO.SG_win = self.list_window[i]
                 phaseO.workflowCreation()
+                phaseO.name = self.list_phase_name[i]
                 
                 #ajout de la phase i dans la liste de phases parente
-                self.parent.phaseList.append(phaseO) 
-
+                self.parent.phaseList.append(phaseO)
+            
+            self.parent.listToIndex = self.list_toIndex
+            
+            if self.otsu:
+                self.parent.otsu_map = self.label_map
+            
             self.close()
     
     def showMsgBox (self, message):
@@ -251,12 +277,17 @@ class phaseForm(uiclass, baseclass):
         retval = msg.exec()
              
     def loadFile (self):
+        # Lets the user choose CIf or DB files
+        
         sender = self.sender()
         options = QFileDialog.Options()
         if sender == self.load_CIF_button :
             path, _ = QFileDialog.getOpenFileName(self, f"Select a CIF file :", "", "Tous les fichiers (*.cif)", options=options)
             self.text_CIF.setText(path)
             self.list_CIF[self.page] = path
+            self.setPhaseName()
+            self.label_CIF.setText("CIF file : " + self.list_phase_name[self.page])
+            
         else :
             path, _ = QFileDialog.getOpenFileName(self, f"Select a Data Base file :", "", "Tous les fichiers (*.crddb)", options=options)
             self.text_DB_file.setText(path)
@@ -265,7 +296,9 @@ class phaseForm(uiclass, baseclass):
             self.setDBSizeMax()
             self.text_DB_size.setText(str(self.list_DB_size_max[self.page]))
     
-    def displaylabels(self, series): # Display of label map
+    def displaylabels(self, series):
+        # Display of label map
+        
         self.LabelsSeries.ui.roiBtn.hide()
         self.LabelsSeries.ui.menuBtn.hide()
         
@@ -276,8 +309,6 @@ class phaseForm(uiclass, baseclass):
         
         # self.LabelsSeries.setColorMap(pg.colormap.get('CET-L13'))
         self.LabelsSeries.setColorMap(pg.colormap.getFromMatplotlib('copper'))
-        # cmap = matplotlib.colors.ListedColormap([[240, 162, 137],[242, 110, 68]])
-        # self.LabelsSeries.setColorMap(pg.colormap.get(cmap))
 
        
 

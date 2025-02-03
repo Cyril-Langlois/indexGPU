@@ -624,6 +624,7 @@ class phaseObject:
         self.SG_win = 3
         self.SG_poly = 2
         self.Workflow = []
+        self.name = ""
 
     def workflowCreation (self):
         if self.SG:
@@ -648,27 +649,23 @@ class preIndexation:
         
         self.phaseList = []
         self.SymQ = []
+        self.otsu_map = []
+        self.listToIndex =[]
         
         # Profile stack loading
-        self.StackLoc, self.StackDir = gf.getFilePathDialog("série d'images à indexer (*.tiff)")
-        checkimage = tf.TiffFile(self.StackLoc[0]).asarray() # Check for dimension. If 2 dimensions : 2D array. If 3 dimensions : stack of images
+        # self.StackLoc, self.StackDir = gf.getFilePathDialog("série d'images à indexer (*.tiff)")
+        # checkimage = tf.TiffFile(self.StackLoc[0]).asarray() # Check for dimension. If 2 dimensions : 2D array. If 3 dimensions : stack of images
  
-        if checkimage.ndim != 3: # Check if the data is not an image series
-            self.popup_message("IniCHORD","Please import a stack of images.",'icons/Main_icon.png')
-            return 
-        else:
-            self.Stack = tf.TiffFile(self.StackLoc[0]).asarray()
-
-        # # Databases loading     
-        # for i in range(parent.nPhases):
-        #     phase = phaseObject()
-        #     self.phaseList.append(phase)
+        # if checkimage.ndim != 3: # Check if the data is not an image series
+        #     self.popup_message("IniCHORD","Please import a stack of images.",'icons/Main_icon.png')
+        #     return 
+        # else:
+        #     self.Stack = tf.TiffFile(self.StackLoc[0]).asarray()
         
         # User interaction to load indexation parameters
-        self.phaseIndex = phaseClass.phaseForm(self, parent.nPhases)
+        self.phaseIndex = phaseClass.phaseForm(self, parent.nPhases, parent.otsu)
         self.phaseIndex.exec_()
         
-        # self.SymQ = sy.get_proper_quaternions_from_CIF(self.preInd.CifLoc) # Get the variable symQ for symmetry of quaternions
         for i, phase in enumerate(self.phaseList):
             self.SymQ.append(sy.get_proper_quaternions_from_CIF(phase.CifLoc)) # Get the variable symQ for symmetry of quaternions
         
