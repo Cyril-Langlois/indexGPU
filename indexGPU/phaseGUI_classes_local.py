@@ -117,7 +117,7 @@ class phaseForm(uiclass, baseclass):
         self.label_map = np.rot90(self.label_map, k=1, axes=(1, 0))
         self.otsuListCreation()
         self.displaylabels(self.thresholded_maps[0])
-        self.label_title_.setText("Phase n°: 0")
+        # self.label_title_.setText("Phase n°: 0")
         
         self.gB_cristallo.setVisible(True)
         self.gB_DB.setVisible(True)
@@ -298,7 +298,7 @@ class phaseForm(uiclass, baseclass):
     
     def displaylabels(self, series):
         # Display of label map
-        
+        self.LabelsSeries.ui.histogram.hide()
         self.LabelsSeries.ui.roiBtn.hide()
         self.LabelsSeries.ui.menuBtn.hide()
         

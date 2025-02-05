@@ -468,7 +468,6 @@ class MainWindow(uiclass, baseclass):
         # Generation of the maps using the information of the clustered map          
         # Create the new arrays using np.where
         for p in range (0, self.nPhases):
-            print(p)
             self.indexation[p].quality_map_tempo = np.zeros((len(labels),len(labels[0])))
             self.indexation[p].nScoresOri_tempo = np.zeros((1,4,len(labels),len(labels[0])))
             self.indexation[p].nScoresDist_tempo = np.zeros((1,len(labels),len(labels[0])))
@@ -543,31 +542,46 @@ class MainWindow(uiclass, baseclass):
     def phase_discrimination(self):
         
         # Initialisation des éléments
-        lenProf = self.Current_stack.shape[0]
-        width = self.Current_stack.shape[1]
-        height = self.Current_stack.shape[2]
         
-        self.rawImage = np.copy(self.indexation[0].rawImage)
-        self.quality_final = np.copy(self.indexation[0].quality_map)
-        self.ori = np.copy(self.indexation[0].nScoresOri)
-        self.dist = np.copy(self.indexation[0].nScoresDist)
-        self.theo_stack = np.copy(self.indexation[0].nScoresStack[0, :, :, :])
-        self.stack_mod = np.copy(self.indexation[0].Treatment_theo_prof[0, :, :, :])
+        if  self.cluster:
+            lenProf = self.indexation[0].rawImage.shape[0]
+            width = self.indexation[0].rawImage.shape[2]
+            height = self.indexation[0].rawImage.shape[1]
+        else:
+            lenProf = self.Current_stack.shape[0]
+            width = self.Current_stack.shape[1]
+            height = self.Current_stack.shape[2]
+        print("lenProf :", lenProf)
+        print("height :", height)
+        print("width :", width)
         
-        # self.quality_final = np.zeros((height, width))
-        # self.ori = np.zeros((4, height, width))
-        # self.dist = np.zeros((height, width))
-        # self.theo_stack = np.zeros((lenProf, height, width))
-        # self.stack_mod = np.zeros((lenProf,height, width))
+        # self.rawImage = np.copy(self.indexation[0].rawImage)
+        # self.quality_final = np.copy(self.indexation[0].quality_map)
+        # self.ori = np.copy(self.indexation[0].nScoresOri)
+        # self.dist = np.copy(self.indexation[0].nScoresDist)
+        # self.theo_stack = np.copy(self.indexation[0].nScoresStack[0, :, :, :])
+        # self.stack_mod = np.copy(self.indexation[0].Treatment_theo_prof[0, :, :, :])
+        
+        self.rawImage = np.zeros((lenProf, height, width))
+        self.quality_final = np.zeros((height, width))
+        self.ori = np.zeros((1, 4, height, width))
+        self.dist = np.zeros((1, height, width))
+        self.theo_stack = np.zeros((lenProf, height, width))
+        self.stack_mod = np.zeros((lenProf,height, width))
+        
+        print("raw image :", self.rawImage.shape)
+        print("quality final :", self.quality_final.shape)
+        print("ori :", self.ori.shape)
+        print("dist :", self.dist.shape)
+        print("theo stack :", self.theo_stack.shape)
+        print("stack mod :", self.stack_mod.shape)
         
         if self.otsu == False:
             self.phase_map_normal()
         
-        print("lenProf :", lenProf)
-        print("width :", width)
-        print("height :", height)
-        print("quality map 0 :", self.indexation[0].quality_map.shape)
-        print("quality map 1 :", self.indexation[1].quality_map.shape)
+       
+        # print("quality map 0 :", self.indexation[0].quality_map.shape)
+        # print("quality map 1 :", self.indexation[1].quality_map.shape)
         listCIF = []
         for p, val in enumerate(self.preInd.listToIndex):
             if val:
@@ -581,17 +595,20 @@ class MainWindow(uiclass, baseclass):
                     else:         # In normal case, the quality map is an array of shape : (height, width)
                         x = c[0]
                         y = c[1]
-                    # self.quality_final[c[0], c[1]] = self.indexation[p].quality_map[x, y]
-                    # self.ori[:, c[0], c[1]] = self.indexation[p].nScoresOri[0, :, x, y]
-                    # self.dist[c[0], c[1]] = self.indexation[p].nScoresDist[0, x, y]
-                    # self.theo_stack[:, c[0], c[1]] = self.indexation[p].nScoresStack[0, :, x, y]
-                    # self.stack_mod[:, c[0], c[1]] = self.indexation[p].Treatment_theo_prof[0, :, x, y]
                     self.rawImage[:, c[0], c[1]] = self.indexation[p].rawImage[:, x, y]
                     self.quality_final[c[0], c[1]] = self.indexation[p].quality_map[x, y]
                     self.ori[0, :, c[0], c[1]] = self.indexation[p].nScoresOri[0, :, x, y]
                     self.dist[0, c[0], c[1]] = self.indexation[p].nScoresDist[0, x, y]
                     self.theo_stack[:, c[0], c[1]] = self.indexation[p].nScoresStack[0, :, x, y]
                     self.stack_mod[:, c[0], c[1]] = self.indexation[p].Treatment_theo_prof[0, :, x, y]
+                     
+                    # self.rawImage[:, c[0], c[1]] = self.indexation[p].rawImage[:, x, y] 
+                    # self.quality_final[c[0], c[1]] = self.indexation[p].quality_map[x, y]
+                    # self.ori[:, c[0], c[1]] = self.indexation[p].nScoresOri[0, :, x, y]
+                    # self.dist[c[0], c[1]] = self.indexation[p].nScoresDist[0, x, y]
+                    # self.theo_stack[:, c[0], c[1]] = self.indexation[p].nScoresStack[0, :, x, y]
+                    # self.stack_mod[:, c[0], c[1]] = self.indexation[p].Treatment_theo_prof[0, :, x, y]
+                   
                 
                 
         self.IPF_final_X = IPF_computation.Display_IPF_GUI(listCIF, self.ori, self.listCoordPhases, 'X')
@@ -702,6 +719,8 @@ class MainWindow(uiclass, baseclass):
         
         # For viewing data diff or not OR theo profiles : extract of the first and only score then flip and rotate       
         self.Current_stack = self.rawImage # Extract the stack of images
+        print("len current stack [0, :, 0] = ", len(self.Current_stack[0, :, 0]))
+        print("len current stack [0, 0, :] = ", len(self.Current_stack[0, 0, :]))
         
         # self.theo_stack = self.indexation[0].nScoresStack[0, :, :, :]
         self.theo_stack = np.flip(self.theo_stack, 1)
@@ -958,11 +977,11 @@ class MainWindow(uiclass, baseclass):
                 self.x = int(mousePoint.x())
                 self.y = int(mousePoint.y())
                 
-                self.label_Quality.setText("Quality indice: " + str(np.round(self.quality_final[self.x, self.y],1)) + "%")
-                if self.nPhases > 1:
-                    p = self.phase_map[self.x, self.y]
-                    name = self.preInd.phaseList[p].name
-                    self.label_phases.setText("Phase map: " + name)
+                # self.label_Quality.setText("Quality indice: " + str(np.round(self.quality_final[self.x, self.y],1)) + "%")
+                # if self.nPhases > 1:
+                #     p = self.phase_map[self.x, self.y]
+                #     name = self.preInd.phaseList[p].name
+                #     self.label_phases.setText("Phase map: " + name)
                     
             except:
                 pass
@@ -970,6 +989,13 @@ class MainWindow(uiclass, baseclass):
             try:
                 if self.x >= 0 and self.y >= 0 and self.x < len(self.Current_stack[0, :, 0]) and self.y < len(self.Current_stack[0, 0, :]):
                     self.drawCHORDprofiles()
+                    self.label_Quality.setText("Quality index: " + str(np.round(self.quality_final[self.x, self.y],1)) + "%")
+                    if self.nPhases > 1:
+                        p = int(self.phase_map[self.x, self.y])
+                        print("p :", p, type(p))
+                        name = self.preInd.phaseList[p].name
+                        print("name :", name)
+                        self.label_phases.setText("Phase map: " + name)
             except:
                 pass
     
