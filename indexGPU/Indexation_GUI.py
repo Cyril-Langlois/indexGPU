@@ -204,6 +204,7 @@ class MainWindow(uiclass, baseclass):
                 self.Current_stack = np.flip(self.Current_stack, 1) # Flip the array
                 self.Current_stack = np.rot90(self.Current_stack, k=1, axes=(2, 1)) # Rotate the array
                 self.displayExpStack(self.Current_stack) # Display the 3D array
+
         
     def loaddata(self): # Allow to load the image serie, the CIF file and the database
         self.Info_box.clear() # Clear the information box
@@ -466,41 +467,43 @@ class MainWindow(uiclass, baseclass):
         
         # Generation of the maps using the information of the clustered map          
         # Create the new arrays using np.where
-        self.indexation[0].quality_map_tempo = np.zeros((len(labels),len(labels[0])))
-        self.indexation[0].nScoresOri_tempo = np.zeros((1,4,len(labels),len(labels[0])))
-        self.indexation[0].nScoresDist_tempo = np.zeros((1,len(labels),len(labels[0])))
-        self.indexation[0].rawImage_tempo = np.zeros((len(self.indexation[0].rawImage),len(labels),len(labels[0])))
-        self.indexation[0].nScoresStack_tempo = np.zeros((1,len(self.indexation[0].nScoresStack[0]),len(labels),len(labels[0])))
-        self.indexation[0].Treatment_theo_prof_tempo = np.zeros((1,len(self.indexation[0].Treatment_theo_prof[0]),len(labels),len(labels[0])))
-        self.indexation[0].testArrayList_tempo = np.zeros((len(self.indexation[0].testArrayList),len(labels),len(labels[0])))
-
-        self.progressBar.setValue(0)
-        self.progressBar.setFormat("Map formation: %p%")
-        self.progressBar.setRange(0, int(np.max(labels))-1) # Set the range accordingly to the number of labels
-
-        for i in range(1,int(np.max(labels))):
+        for p in range (0, self.nPhases):
+            print(p)
+            self.indexation[p].quality_map_tempo = np.zeros((len(labels),len(labels[0])))
+            self.indexation[p].nScoresOri_tempo = np.zeros((1,4,len(labels),len(labels[0])))
+            self.indexation[p].nScoresDist_tempo = np.zeros((1,len(labels),len(labels[0])))
+            self.indexation[p].rawImage_tempo = np.zeros((len(self.indexation[p].rawImage),len(labels),len(labels[0])))
+            self.indexation[p].nScoresStack_tempo = np.zeros((1,len(self.indexation[p].nScoresStack[0]),len(labels),len(labels[0])))
+            self.indexation[p].Treatment_theo_prof_tempo = np.zeros((1,len(self.indexation[p].Treatment_theo_prof[0]),len(labels),len(labels[0])))
+            self.indexation[p].testArrayList_tempo = np.zeros((len(self.indexation[p].testArrayList),len(labels),len(labels[0])))
+    
+            self.progressBar.setValue(0)
+            self.progressBar.setFormat("Map formation: %p%")
+            self.progressBar.setRange(0, int(np.max(labels))-1) # Set the range accordingly to the number of labels
+    
+            for i in range(1,int(np.max(labels))):
+                
+                QApplication.processEvents()    
+                self.ValSlice = i
+                self.progression_bar()
+                
+                var = np.where(labels == i)
+                self.indexation[p].quality_map_tempo[var] = self.indexation[p].quality_map[:,i-1]
+                self.indexation[p].nScoresOri_tempo[:,:,var[0],var[1]] = self.indexation[p].nScoresOri[:,:,:,i-1]
+                self.indexation[p].nScoresDist_tempo[:,var[0],var[1]] = self.indexation[p].nScoresDist[:,:,i-1]
+                self.indexation[p].rawImage_tempo[:,var[0],var[1]] = self.indexation[p].rawImage[:,:,i-1]
+                self.indexation[p].nScoresStack_tempo[:,:,var[0],var[1]] = self.indexation[p].nScoresStack[:,:,:,i-1]
+                self.indexation[p].Treatment_theo_prof_tempo[:,:,var[0],var[1]] = self.indexation[p].Treatment_theo_prof[:,:,:,i-1]
+                self.indexation[p].testArrayList_tempo[:,var[0],var[1]] = self.indexation[p].testArrayList[:,:,i-1]
             
-            QApplication.processEvents()    
-            self.ValSlice = i
-            self.progression_bar()
-            
-            var = np.where(labels == i)
-            self.indexation[0].quality_map_tempo[var] = self.indexation[0].quality_map[:,i-1]
-            self.indexation[0].nScoresOri_tempo[:,:,var[0],var[1]] = self.indexation[0].nScoresOri[:,:,:,i-1]
-            self.indexation[0].nScoresDist_tempo[:,var[0],var[1]] = self.indexation[0].nScoresDist[:,:,i-1]
-            self.indexation[0].rawImage_tempo[:,var[0],var[1]] = self.indexation[0].rawImage[:,:,i-1]
-            self.indexation[0].nScoresStack_tempo[:,:,var[0],var[1]] = self.indexation[0].nScoresStack[:,:,:,i-1]
-            self.indexation[0].Treatment_theo_prof_tempo[:,:,var[0],var[1]] = self.indexation[0].Treatment_theo_prof[:,:,:,i-1]
-            self.indexation[0].testArrayList_tempo[:,var[0],var[1]] = self.indexation[0].testArrayList[:,:,i-1]
-        
-        # Then replace the arrays 
-        self.indexation[0].quality_map = self.indexation[0].quality_map_tempo
-        self.indexation[0].nScoresOri = self.indexation[0].nScoresOri_tempo
-        self.indexation[0].nScoresDist = self.indexation[0].nScoresDist_tempo
-        self.indexation[0].rawImage = self.indexation[0].rawImage_tempo
-        self.indexation[0].nScoresStack = self.indexation[0].nScoresStack_tempo
-        self.indexation[0].Treatment_theo_prof = self.indexation[0].Treatment_theo_prof_tempo
-        self.indexation[0].testArrayList = self.indexation[0].testArrayList_tempo
+            # Then replace the arrays 
+            self.indexation[p].quality_map = self.indexation[p].quality_map_tempo
+            self.indexation[p].nScoresOri = self.indexation[p].nScoresOri_tempo
+            self.indexation[p].nScoresDist = self.indexation[p].nScoresDist_tempo
+            self.indexation[p].rawImage = self.indexation[p].rawImage_tempo
+            self.indexation[p].nScoresStack = self.indexation[p].nScoresStack_tempo
+            self.indexation[p].Treatment_theo_prof = self.indexation[p].Treatment_theo_prof_tempo
+            self.indexation[p].testArrayList = self.indexation[p].testArrayList_tempo
         
         # Recreate an h5 file with the new data
         self.savingRes_cluster()
@@ -508,6 +511,8 @@ class MainWindow(uiclass, baseclass):
     def creationListProfilesOtsu(self):
         self.listCoordPhases = []
         self.phase_map = self.preInd.otsu_map
+        self.phase_map = np.flip(self.phase_map, 1)
+        self.phase_map = np.rot90(self.phase_map, k=1, axes=(0,1))
         self.profilesRaw = []
         for i in range (self.nPhases):
             coord_phase = np.argwhere(self.phase_map == i)
@@ -515,7 +520,7 @@ class MainWindow(uiclass, baseclass):
            
             groupProfiles = [] # one group for each phase
             for c in coord_phase:
-                groupProfiles.append(self.Current_stack[:, c[0], c[1]])
+                groupProfiles.append(self.Current_stack[:, c[1], c[0]])
             self.profilesRaw.append(groupProfiles)
     
     def phase_map_normal(self):
@@ -537,27 +542,56 @@ class MainWindow(uiclass, baseclass):
     
     def phase_discrimination(self):
         
-        if self.otsu == False:
-            self.phase_map_normal()
-        
         # Initialisation des éléments
+        lenProf = self.Current_stack.shape[0]
+        width = self.Current_stack.shape[1]
+        height = self.Current_stack.shape[2]
+        
+        self.rawImage = np.copy(self.indexation[0].rawImage)
         self.quality_final = np.copy(self.indexation[0].quality_map)
         self.ori = np.copy(self.indexation[0].nScoresOri)
         self.dist = np.copy(self.indexation[0].nScoresDist)
         self.theo_stack = np.copy(self.indexation[0].nScoresStack[0, :, :, :])
         self.stack_mod = np.copy(self.indexation[0].Treatment_theo_prof[0, :, :, :])
-
+        
+        # self.quality_final = np.zeros((height, width))
+        # self.ori = np.zeros((4, height, width))
+        # self.dist = np.zeros((height, width))
+        # self.theo_stack = np.zeros((lenProf, height, width))
+        # self.stack_mod = np.zeros((lenProf,height, width))
+        
+        if self.otsu == False:
+            self.phase_map_normal()
+        
+        print("lenProf :", lenProf)
+        print("width :", width)
+        print("height :", height)
+        print("quality map 0 :", self.indexation[0].quality_map.shape)
+        print("quality map 1 :", self.indexation[1].quality_map.shape)
         listCIF = []
         for p, val in enumerate(self.preInd.listToIndex):
             if val:
                 listCIF.append(self.indexation[p].CIF)
+                
                 #Construction des éléments finaux qui sont un mix des éléments de chaque phase
-                for c in self.listCoordPhases[p]: 
-                    self.quality_final[c[0], c[1]] = self.indexation[p].quality_map[c[0], c[1]]
-                    self.ori[:, :, c[0], c[1]] = self.indexation[p].nScoresOri[:, :, c[0], c[1]]
-                    self.dist[:, c[0], c[1]] = self.indexation[p].nScoresDist[:, c[0], c[1]]
-                    self.theo_stack[:, c[0], c[1]] = self.indexation[p].nScoresStack[0, :, c[0], c[1]]
-                    self.stack_mod[:, c[0], c[1]] = self.indexation[p].Treatment_theo_prof[0, :, c[0], c[1]]
+                for i, c in enumerate(self.listCoordPhases[p]): 
+                    if self.otsu: # In otsu case, the quality map is an array of shape : (number of pix in phase p, 1)
+                        x = i-1
+                        y = 0
+                    else:         # In normal case, the quality map is an array of shape : (height, width)
+                        x = c[0]
+                        y = c[1]
+                    # self.quality_final[c[0], c[1]] = self.indexation[p].quality_map[x, y]
+                    # self.ori[:, c[0], c[1]] = self.indexation[p].nScoresOri[0, :, x, y]
+                    # self.dist[c[0], c[1]] = self.indexation[p].nScoresDist[0, x, y]
+                    # self.theo_stack[:, c[0], c[1]] = self.indexation[p].nScoresStack[0, :, x, y]
+                    # self.stack_mod[:, c[0], c[1]] = self.indexation[p].Treatment_theo_prof[0, :, x, y]
+                    self.rawImage[:, c[0], c[1]] = self.indexation[p].rawImage[:, x, y]
+                    self.quality_final[c[0], c[1]] = self.indexation[p].quality_map[x, y]
+                    self.ori[0, :, c[0], c[1]] = self.indexation[p].nScoresOri[0, :, x, y]
+                    self.dist[0, c[0], c[1]] = self.indexation[p].nScoresDist[0, x, y]
+                    self.theo_stack[:, c[0], c[1]] = self.indexation[p].nScoresStack[0, :, x, y]
+                    self.stack_mod[:, c[0], c[1]] = self.indexation[p].Treatment_theo_prof[0, :, x, y]
                 
                 
         self.IPF_final_X = IPF_computation.Display_IPF_GUI(listCIF, self.ori, self.listCoordPhases, 'X')
@@ -595,41 +629,34 @@ class MainWindow(uiclass, baseclass):
         self.BatchDatabase_value = self.Database_SpinBox.value() # Number of theoretical profiles per batch
         
         # Indexation preparation
-        for i, val in enumerate(self.preInd.listToIndex):
+        for p, val in enumerate(self.preInd.listToIndex):
             if val:
+                # "a" is the array of profiles to index
                 if self.otsu:
                     # créer un sous-ensemble des profils des pixels appartenant à la phase à partir de la carte Otsu.
-                    pixInPhase = len(self.listCoordPhases[i])
+                    pixInPhase = len(self.listCoordPhases[p])
                     lenProf = len(self.Stack)
                     b = np.zeros((pixInPhase, lenProf))
-                    b[:, :] = self.profilesRaw[i]
+                    b[:, :] = self.profilesRaw[p]
                     
                     a = np.zeros((lenProf, pixInPhase, 1))
                     a[:, :, 0] =  b.T
                 else:
                     a = self.Stack
                     
-                self.indexation.append(indGPU.IndexationGPUderiv(self,a, 
-                                                        self.PathDir, self.preInd.phaseList[i].DatabaseLoc, 
-                                                        self.preInd.phaseList[i].CifLoc, 
-                                                        Workflow = self.preInd.phaseList[i].Workflow, 
+                self.indexation.append(indGPU.IndexationGPUderiv(self, a, 
+                                                        self.PathDir, self.preInd.phaseList[p].DatabaseLoc, 
+                                                        self.preInd.phaseList[p].CifLoc, 
+                                                        Workflow = self.preInd.phaseList[p].Workflow, 
                                                         normType = "centered euclidian", nbSTACK=self.BatchProfiles_value,
                                                         nbDB = self.BatchDatabase_value))
             else:
                 self.indexation.append(None)
-                
-        # for i in range(self.nPhases):
-        #     self.indexation.append(indGPU.IndexationGPUderiv(self,self.Stack, 
-        #                                                 self.PathDir, self.preInd.phaseList[i].DatabaseLoc, 
-        #                                                 self.preInd.phaseList[i].CifLoc, 
-        #                                                 Workflow = self.preInd.phaseList[i].Workflow, 
-        #                                                 normType = "centered euclidian", nbSTACK=self.BatchProfiles_value,
-        #                                                 nbDB = self.BatchDatabase_value))
         
         # Run indexation matching step
-        for i, val in enumerate(self.preInd.listToIndex):
+        for p, val in enumerate(self.preInd.listToIndex):
             if val:
-                self.indexation[i].runIndexation()
+                self.indexation[p].runIndexation()
                 
         # for i in range(self.nPhases):
         #     self.indexation[i].runIndexation()
@@ -656,9 +683,12 @@ class MainWindow(uiclass, baseclass):
         
         self.expSeries.setVisible(True) # Show the image serie display window
         
-        self.indexation[0].rawImage = np.flip(self.indexation[0].rawImage, 1) # Flip the array
-        self.indexation[0].rawImage = np.rot90(self.indexation[0].rawImage, k=1, axes=(2, 1)) # Rotate the array
-        self.displayExpStack(self.indexation[0].rawImage) # Display the 3D array
+        # self.indexation[0].rawImage = np.flip(self.indexation[0].rawImage, 1) # Flip the array
+        # self.indexation[0].rawImage = np.rot90(self.indexation[0].rawImage, k=1, axes=(2, 1)) # Rotate the array
+        # self.displayExpStack(self.indexation[0].rawImage) # Display the 3D array
+        self.rawImage = np.flip(self.rawImage, 1) # Flip the array
+        self.rawImage = np.rot90(self.rawImage, k=1, axes=(2, 1)) # Rotate the array
+        self.displayExpStack(self.rawImage) # Display the 3D array
         
         self.Info_box.ensureCursorVisible()
         self.Info_box.insertPlainText("\n \u2022 Quality map has been computed.")
@@ -667,11 +697,11 @@ class MainWindow(uiclass, baseclass):
         # Flip and rotate self.nScoresDist to be homogenenous (for computation)
         # self.indexation[0].nScoresDist = np.flip(self.indexation[0].nScoresDist, 1)
         # self.indexation[0].nScoresDist = np.rot90(self.indexation[0].nScoresDist, k=1, axes=(2, 1))
-        self.dist = np.flip(self.dist, 1)
-        self.dist = np.rot90(self.dist, k=1, axes=(2, 1))
+        # self.dist = np.flip(self.dist, 1)
+        # self.dist = np.rot90(self.dist, k=1, axes=(2, 1))
         
         # For viewing data diff or not OR theo profiles : extract of the first and only score then flip and rotate       
-        self.Current_stack = self.indexation[0].rawImage # Extract the stack of images
+        self.Current_stack = self.rawImage # Extract the stack of images
         
         # self.theo_stack = self.indexation[0].nScoresStack[0, :, :, :]
         self.theo_stack = np.flip(self.theo_stack, 1)
@@ -741,22 +771,6 @@ class MainWindow(uiclass, baseclass):
         
     def Change_IPFView(self):
         self.OriChoice = self.OriBox.currentText() # Choice between X-Y-Z
-        
-        # if self.OriChoice == "IPF-X":
-            # self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='X')
-            # self.IPF_map = np.flip(self.IPF_map,1)
-            # self.IPF_map = np.rot90(self.IPF_map)
-            # self.displayIPFmap(self.IPF_map)
-        # elif self.OriChoice == "IPF-Y":
-            # self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Y')
-            # self.IPF_map = np.flip(self.IPF_map,1)
-            # self.IPF_map = np.rot90(self.IPF_map)
-            # self.displayIPFmap(self.IPF_map)
-        # elif self.OriChoice == "IPF-Z":
-            # self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Z')
-            # self.IPF_map = np.flip(self.IPF_map,1)
-            # self.IPF_map = np.rot90(self.IPF_map)
-            # self.displayIPFmap(self.IPF_map)
         
         if self.OriChoice == "IPF-X":
             self.IPF_map = self.IPF_final_X
@@ -859,9 +873,7 @@ class MainWindow(uiclass, baseclass):
         self.progressBar.setValue(self.prgbar)
 
     def Save_results(self):
-        # IPF_map_X = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='X')
-        # IPF_map_Y = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Y')
-        # IPF_map_Z = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Z')
+        
         IPF_map_X = self.IPF_final_X
         IPF_map_Y = self.IPF_final_Y
         IPF_map_Z = self.IPF_final_Z
@@ -873,26 +885,38 @@ class MainWindow(uiclass, baseclass):
         phaseMap = (phaseMap * 255).astype(np.uint8)
     
         # Images saving step
+        # if self.flag_folder == 1:
+        #     # tf.imwrite(self.PathDir + '/Quality_map.tiff', np.rot90(np.flip(self.indexation[0].quality_map, 0), k=1, axes=(1, 0)))
+        #     # tf.imwrite(self.PathDir + '/Distance_map.tiff',np.rot90(np.flip(1-self.indexation[0].nScoresDist, 1), k=1, axes=(2, 1)))
+        #     tf.imwrite(self.PathDir + '/Quality_map.tiff', np.rot90(np.flip(self.quality_final, 0), k=1, axes=(1, 0)))
+        #     tf.imwrite(self.PathDir + '/Distance_map.tiff',1-self.dist)
+        #     tf.imwrite(self.PathDir + '/IPF_X.tiff',IPF_map_X)
+        #     tf.imwrite(self.PathDir + '/IPF_Y.tiff',IPF_map_Y)
+        #     tf.imwrite(self.PathDir + '/IPF_Z.tiff',IPF_map_Z)
+        #     if self.nPhases > 1:
+        #         tf.imwrite(self.PathDir + '/Phase_map.tiff', phaseMap)
+        # else: 
+        #     # tf.imwrite(self.StackDir + '/Quality_map.tiff', np.rot90(np.flip(self.indexation[0].quality_map, 0), k=1, axes=(1, 0)))
+        #     # tf.imwrite(self.StackDir + '/Distance_map.tiff',np.rot90(np.flip(1-self.indexation[0].nScoresDist, 1), k=1, axes=(2, 1)))
+        #     tf.imwrite(self.StackDir + '/Quality_map.tiff', np.rot90(np.flip(self.quality_final, 0), k=1, axes=(1, 0)))
+        #     tf.imwrite(self.StackDir + '/Distance_map.tiff',1-self.dist)
+        #     tf.imwrite(self.StackDir + '/IPF_X.tiff',IPF_map_X)
+        #     tf.imwrite(self.StackDir + '/IPF_Y.tiff',IPF_map_Y)
+        #     tf.imwrite(self.StackDir + '/IPF_Z.tiff',IPF_map_Z)
+        #     if self.nPhases > 1:
+        #         tf.imwrite(self.StackDir + '/Phase_map.tiff', phaseMap)
+                
         if self.flag_folder == 1:
-            # tf.imwrite(self.PathDir + '/Quality_map.tiff', np.rot90(np.flip(self.indexation[0].quality_map, 0), k=1, axes=(1, 0)))
-            # tf.imwrite(self.PathDir + '/Distance_map.tiff',np.rot90(np.flip(1-self.indexation[0].nScoresDist, 1), k=1, axes=(2, 1)))
-            tf.imwrite(self.PathDir + '/Quality_map.tiff',self.quality_final)
-            tf.imwrite(self.PathDir + '/Distance_map.tiff',1-self.dist)
-            tf.imwrite(self.PathDir + '/IPF_X.tiff',IPF_map_X)
-            tf.imwrite(self.PathDir + '/IPF_Y.tiff',IPF_map_Y)
-            tf.imwrite(self.PathDir + '/IPF_Z.tiff',IPF_map_Z)
-            if self.nPhases > 1:
-                tf.imwrite(self.PathDir + '/Phase_map.tiff', phaseMap)
-        else: 
-            # tf.imwrite(self.StackDir + '/Quality_map.tiff', np.rot90(np.flip(self.indexation[0].quality_map, 0), k=1, axes=(1, 0)))
-            # tf.imwrite(self.StackDir + '/Distance_map.tiff',np.rot90(np.flip(1-self.indexation[0].nScoresDist, 1), k=1, axes=(2, 1)))
-            tf.imwrite(self.StackDir + '/Quality_map.tiff', self.quality_final)
-            tf.imwrite(self.StackDir + '/Distance_map.tiff',1-self.dist)
-            tf.imwrite(self.StackDir + '/IPF_X.tiff',IPF_map_X)
-            tf.imwrite(self.StackDir + '/IPF_Y.tiff',IPF_map_Y)
-            tf.imwrite(self.StackDir + '/IPF_Z.tiff',IPF_map_Z)
-            if self.nPhases > 1:
-                tf.imwrite(self.StackDir + '/Phase_map.tiff', phaseMap)
+            directory = self.PathDir
+        else:
+            directory = self.StackDir
+        tf.imwrite(directory + '/Quality_map.tiff', np.rot90(np.flip(self.quality_final, 0), k=1, axes=(1, 0)))
+        tf.imwrite(directory + '/Distance_map.tiff',1-self.dist)
+        tf.imwrite(directory + '/IPF_X.tiff',IPF_map_X)
+        tf.imwrite(directory + '/IPF_Y.tiff',IPF_map_Y)
+        tf.imwrite(directory + '/IPF_Z.tiff',IPF_map_Z)
+        if self.nPhases > 1:
+            tf.imwrite(directory + '/Phase_map.tiff', np.rot90(np.flip(phaseMap, 0), k=1, axes=(1,0)))
             
         # Finished message
         self.popup_message("indexation[0]","Saving process is over.",'icons/indexation[0]_icon.png')
@@ -934,13 +958,12 @@ class MainWindow(uiclass, baseclass):
                 self.x = int(mousePoint.x())
                 self.y = int(mousePoint.y())
                 
-                # self.label_Quality.setText("Quality indice: " + str(np.round(self.indexation[0].quality_map[self.x, self.y],1)) + "%")
                 self.label_Quality.setText("Quality indice: " + str(np.round(self.quality_final[self.x, self.y],1)) + "%")
                 if self.nPhases > 1:
                     p = self.phase_map[self.x, self.y]
                     name = self.preInd.phaseList[p].name
                     self.label_phases.setText("Phase map: " + name)
-                    # self.label_phases.setText("Phase map: " + str(self.phase_map[self.x, self.y]))
+                    
             except:
                 pass
 
