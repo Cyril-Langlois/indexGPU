@@ -105,11 +105,9 @@ class MainWindow(uiclass, baseclass):
         self.savgol_label1.setVisible(False) # Hide window label for savgol
         self.savgol_label2.setVisible(False) # Hide order label for savgol
         self.PresetBox.setVisible(False)
-        # self.PresetBox.currentIndexChanged.connect(self.hide_and_show)
 
         self.TheoProfiles.stateChanged.connect(self.drawCHORDprofiles) # Allow the visualization of the theoretical profiles
         self.ModProfiles.stateChanged.connect(self.drawCHORDprofiles) # Allow the visualization of the profiles used for indexing
-        # self.treeWidget.itemSelectionChanged.connect(self.handle_item_tree) # Va regarder dans quel cas on est
 
         app = QApplication.instance()
         screen = app.screenAt(self.pos())
@@ -186,6 +184,8 @@ class MainWindow(uiclass, baseclass):
         self.otsu = self.checkBox_otsu.isChecked()
     
     def loadProfiles(self):
+        # Creation of self.Current_stack to be use elsewhere
+        
         self.StackLoc, self.StackDir = gf.getFilePathDialog("série d'images à indexer (*.tiff)")
         checkimage = tf.TiffFile(self.StackLoc[0]).asarray() # Check for dimension. If 2 dimensions : 2D array. If 3 dimensions : stack of images
  
@@ -201,7 +201,7 @@ class MainWindow(uiclass, baseclass):
                 self.checkBox_otsu.setVisible(False)
                 self.Info_box.ensureCursorVisible()
                 self.Info_box.insertPlainText("\n \u2022 Enter in clustering indexation mode.")
-                # QApplication.processEvents()
+                QApplication.processEvents()
             else:   
                 self.Current_stack = np.flip(self.Current_stack, 1) # Flip the array
                 self.Current_stack = np.rot90(self.Current_stack, k=1, axes=(2, 1)) # Rotate the array
@@ -212,25 +212,6 @@ class MainWindow(uiclass, baseclass):
         self.Info_box.clear() # Clear the information box
         
         self.preInd = indGPU.preIndexation(self) # Ask to open the three files
-        
-        # Creation of self.Current_stack to be use elsewhere
-        # 
-        # self.Current_stack = self.preInd.Stack # Extract the stack of images
-        # self.Current_stack = np.flip(self.Current_stack, 1) # Flip the array
-        # self.Current_stack = np.rot90(self.Current_stack, k=1, axes=(2, 1)) # Rotate the array
-        
-        # if self.Cluster_index.isChecked(): # Specific to cluster indexation 
-        #     self.expSeries.setVisible(False) # Hide the image serie display window
-            
-        #     self.Info_box.ensureCursorVisible()
-        #     self.Info_box.insertPlainText("\n \u2022 Enter in clustering indexation mode.")
-        #     QApplication.processEvents()
-            
-        # else:
-        #     self.displayExpStack(self.Current_stack) # Display the 3D array
-
-        # # self.SymQ = sy.get_proper_quaternions_from_CIF(self..CifLoc) # Get the variable symQ for symmetry of quaternions
-        # self.SymQ = sy.get_proper_quaternions_from_CIF(self.preInd.phaseList[0].CifLoc) # Get the variable symQ for symmetry of quaternions
         
         # Storage folder creation
         ti = time.strftime("%Y-%m-%d__%Hh-%Mm-%Ss") # Absolute time 
@@ -245,51 +226,6 @@ class MainWindow(uiclass, baseclass):
         self.Info_box.ensureCursorVisible()
         self.Info_box.insertPlainText("\n \u2022 Data have been loaded.")
         QApplication.processEvents()
-
-    def handle_item_tree(self):
-        selected_items = self.treeWidget.selectedItems()
-        if selected_items:
-            item = selected_items[0]
-            item_text = item.text(0)
-
-            if item_text == "Raw indexation (SP)":
-                self.Cluster_index.setChecked(False)
-                self.Info_box.ensureCursorVisible()
-                self.Info_box.insertPlainText("\n \u2022 Raw indexation on single phase.")
-                QApplication.processEvents()
-            elif item_text == "Indexation from label (SP)":
-                self.Cluster_index.setChecked(True)
-                self.Info_box.ensureCursorVisible()
-                self.Info_box.insertPlainText("\n \u2022 Label based indexation on single phase.")
-                QApplication.processEvents()
-            elif item_text == "Raw indexation (ZA)":
-                self.Cluster_index.setChecked(False)
-                self.Info_box.ensureCursorVisible()
-                self.Info_box.insertPlainText("\n \u2022 Z-Multiphase : raw indexation.")
-                QApplication.processEvents()
-            elif item_text == "Indexation from label (ZA)":
-                self.Cluster_index.setChecked(True)
-                self.Info_box.ensureCursorVisible()
-                self.Info_box.insertPlainText("\n \u2022 Z-Multiphase : label based indexation.")
-                QApplication.processEvents()
-            elif item_text == "Raw indexation (PA)":
-                self.Cluster_index.setChecked(False)
-                self.Info_box.ensureCursorVisible()
-                self.Info_box.insertPlainText("\n \u2022 Phase-Multiphase : raw indexation.")
-                QApplication.processEvents()            
-            elif item_text == "Indexation from label (PA)":
-                self.Cluster_index.setChecked(True)
-                self.Info_box.ensureCursorVisible()
-                self.Info_box.insertPlainText("\n \u2022 Phase-Multiphase : label based indexation.")
-                QApplication.processEvents()                 
-            else :
-                self.Info_box.ensureCursorVisible()
-                self.Info_box.insertPlainText("\n \u2022 Not a method.")
-                QApplication.processEvents()
-                pass
-            
-        else:
-            pass
 
     def Reload_data(self): # Reload the H5 file
         try:
@@ -568,17 +504,7 @@ class MainWindow(uiclass, baseclass):
             lenProf = self.Current_stack.shape[0]
             width = self.Current_stack.shape[1]
             height = self.Current_stack.shape[2]
-        print("lenProf :", lenProf)
-        print("height :", height)
-        print("width :", width)
-        
-        # self.rawImage = np.copy(self.indexation[0].rawImage)
-        # self.quality_final = np.copy(self.indexation[0].quality_map)
-        # self.ori = np.copy(self.indexation[0].nScoresOri)
-        # self.dist = np.copy(self.indexation[0].nScoresDist)
-        # self.theo_stack = np.copy(self.indexation[0].nScoresStack[0, :, :, :])
-        # self.stack_mod = np.copy(self.indexation[0].Treatment_theo_prof[0, :, :, :])
-        
+       
         self.rawImage = np.zeros((lenProf, height, width))
         self.quality_final = np.zeros((height, width))
         self.ori_f = np.zeros((4, height, width))
@@ -586,14 +512,6 @@ class MainWindow(uiclass, baseclass):
         self.theo_stack = np.zeros((lenProf, height, width))
         self.stack_mod = np.zeros((lenProf,height, width))
         self.expStack_mod = np.zeros((lenProf, height, width))
-        
-        # print("raw image :", self.rawImage.shape)
-        # print("quality final :", self.quality_final.shape)
-        # print("ori :", self.ori.shape)
-        # print("dist :", self.dist.shape)
-        # print("theo stack :", self.theo_stack.shape)
-        # print("stack mod :", self.stack_mod.shape)
-        # print("expstack mod :", self.expStack_mod.shape)
         
         listCIF = []
         for p, val in enumerate(self.preInd.listToIndex):
@@ -622,14 +540,6 @@ class MainWindow(uiclass, baseclass):
                     self.stack_mod[:, c[0], c[1]] = self.indexation[p].Treatment_theo_prof[0, :, x, y]
                     self.expStack_mod[:, c[0], c[1]] = diffIm[:, x, y]
                      
-                    # self.rawImage[:, c[0], c[1]] = self.indexation[p].rawImage[:, x, y] 
-                    # self.quality_final[c[0], c[1]] = self.indexation[p].quality_map[x, y]
-                    # self.ori[:, c[0], c[1]] = self.indexation[p].nScoresOri[0, :, x, y]
-                    # self.dist[c[0], c[1]] = self.indexation[p].nScoresDist[0, x, y]
-                    # self.theo_stack[:, c[0], c[1]] = self.indexation[p].nScoresStack[0, :, x, y]
-                    # self.stack_mod[:, c[0], c[1]] = self.indexation[p].Treatment_theo_prof[0, :, x, y]
-                   
-                
                 
         self.IPF_final_X = IPF_computation.Display_IPF_GUI(listCIF, self.ori_f, self.listCoordPhases, self.preInd.listToIndex, 'X')
         self.IPF_final_Y = IPF_computation.Display_IPF_GUI(listCIF, self.ori_f, self.listCoordPhases, self.preInd.listToIndex, 'Y')
@@ -647,20 +557,6 @@ class MainWindow(uiclass, baseclass):
         
         if self.otsu:
             self.creationListProfilesOtsu()
-        
-        # self.savgol_window = self.window_SpinBox.value() # Window length of the filter
-        # self.savgol_polyorder = self.poly_SpinBox.value() # Order of the polynomial
-        
-        # # Specify which type of indexation must be use
-        # if self.methodChoice == "Classical indexation":
-        #     Op1 = ['Diff', 0]
-        # elif self.methodChoice == "Derivative indexation":
-        #     Op1 = ['Diff', 1]   
-        # elif self.methodChoice == "Savgol derivative indexation":
-        #     Op1 = ['Diff', 1, self.savgol_window, self.savgol_polyorder]
-            
-        # Workflow = []
-        # Workflow.append(Op1)
         
         self.BatchProfiles_value = self.Profiles_SpinBox.value() # Number of experimental profiles per batch
         self.BatchDatabase_value = self.Database_SpinBox.value() # Number of theoretical profiles per batch
@@ -694,9 +590,6 @@ class MainWindow(uiclass, baseclass):
         for p, val in enumerate(self.preInd.listToIndex):
             if val:
                 self.indexation[p].runIndexation()
-                
-        # for i in range(self.nPhases):
-        #     self.indexation[i].runIndexation()
         
         if self.cluster: # Specific to cluster indexation 
             self.labelIndex()
@@ -705,15 +598,8 @@ class MainWindow(uiclass, baseclass):
             
         # Keep the first and only score, then swapaxes
         
-        # self.ori before swapaxe : quaternions (axe 0), height (axe 1), width (axe 2)
-        # self.ori = self.indexation[0].nScoresOri[0,:,:,:]
-        # self.ori = self.ori_f[0,:,:,:]
         self.ori = np.swapaxes(self.ori_f, 1, 2)
-        # self.ori after swapaxe : quaternions (axe 0), height (axe 1), width (axe 2)
-                
-        # self.indexation[0].quality_map = np.flip(self.indexation[0].quality_map, 0) # Flip the array
-        # self.indexation[0].quality_map = np.rot90(self.indexation[0].quality_map, k=1, axes=(1, 0)) # Rotate the array
-        # self.displayQuality(self.indexation[0].quality_map) # Display the quality map
+
         self.quality_final = np.flip(self.quality_final, 0) # Flip the array
         self.quality_final = np.rot90(self.quality_final, k=1, axes=(1, 0)) # Rotate the array
         self.displayQuality(self.quality_final) # Display the quality map
@@ -721,9 +607,6 @@ class MainWindow(uiclass, baseclass):
         
         self.expSeries.setVisible(True) # Show the image serie display window
         
-        # self.indexation[0].rawImage = np.flip(self.indexation[0].rawImage, 1) # Flip the array
-        # self.indexation[0].rawImage = np.rot90(self.indexation[0].rawImage, k=1, axes=(2, 1)) # Rotate the array
-        # self.displayExpStack(self.indexation[0].rawImage) # Display the 3D array
         self.rawImage = np.flip(self.rawImage, 1) # Flip the array
         self.rawImage = np.rot90(self.rawImage, k=1, axes=(2, 1)) # Rotate the array
         self.displayExpStack(self.rawImage) # Display the 3D array
@@ -733,15 +616,11 @@ class MainWindow(uiclass, baseclass):
         QApplication.processEvents()
         
         # Flip and rotate self.nScoresDist to be homogenenous (for computation)
-        # self.indexation[0].nScoresDist = np.flip(self.indexation[0].nScoresDist, 1)
-        # self.indexation[0].nScoresDist = np.rot90(self.indexation[0].nScoresDist, k=1, axes=(2, 1))
         self.dist = np.flip(self.dist, 1)
         self.dist = np.rot90(self.dist, k=1, axes=(2, 1))
         
         # For viewing data diff or not OR theo profiles : extract of the first and only score then flip and rotate       
         self.Current_stack = self.rawImage # Extract the stack of images
-        # print("len current stack [0, :, 0] = ", len(self.Current_stack[0, :, 0]))
-        # print("len current stack [0, 0, :] = ", len(self.Current_stack[0, 0, :]))
         
         # self.theo_stack = self.indexation[0].nScoresStack[0, :, :, :]
         self.theo_stack = np.flip(self.theo_stack, 1)
@@ -756,7 +635,6 @@ class MainWindow(uiclass, baseclass):
         self.expStack_mod = np.rot90(self.expStack_mod, k=1, axes=(2, 1))
         
         # Display of IPF map 
-        # self.IPF_map = IPF_computation.Display_IPF_GUI(self.indexation[0].CIF, self.indexation[0].nScoresOri, IPF_view='Z')
         self.IPF_map = self.IPF_final_Z
         self.IPF_map = np.flip(self.IPF_map,1)
         self.IPF_map = np.rot90(self.IPF_map)
@@ -764,9 +642,6 @@ class MainWindow(uiclass, baseclass):
         self.displayIPFmap(self.IPF_map)   
         
         # Display of phase_map
-        # self.phase_map = np.flip(self.phase_map,1)
-        # self.phase_map = np.rot90(self.phase_map)
-        # self.displayPhaseMap(self.phase_map)
         self.phase_map = np.flip(self.phase_map,1)
         self.phase_map = np.rot90(self.phase_map)
         self.displayPhaseMap(self.phase_map)
@@ -900,7 +775,6 @@ class MainWindow(uiclass, baseclass):
             r = int(ROIcoords[0, i])
             c = int(ROIcoords[1, i])
             OriValues[:, i] = self.ori[:, r, c]
-            # self.qualValue[:, i] = self.indexation[0].quality_map[r, c]
             self.qualValue[:, i] = self.quality_final[r, c]
         
         self.qualValue = self.qualValue[0,:] # Quality map values
@@ -928,29 +802,9 @@ class MainWindow(uiclass, baseclass):
         IPF_map_X = (IPF_map_X * 255).astype(np.uint8)
         IPF_map_Y = (IPF_map_Y * 255).astype(np.uint8)
         IPF_map_Z = (IPF_map_Z * 255).astype(np.uint8)
-        phaseMap = (phaseMap * 255).astype(np.uint8)
+        phaseMap = gf.convertToUint8(phaseMap)
     
         # Images saving step
-        # if self.flag_folder == 1:
-        #     # tf.imwrite(self.PathDir + '/Quality_map.tiff', np.rot90(np.flip(self.indexation[0].quality_map, 0), k=1, axes=(1, 0)))
-        #     # tf.imwrite(self.PathDir + '/Distance_map.tiff',np.rot90(np.flip(1-self.indexation[0].nScoresDist, 1), k=1, axes=(2, 1)))
-        #     tf.imwrite(self.PathDir + '/Quality_map.tiff', np.rot90(np.flip(self.quality_final, 0), k=1, axes=(1, 0)))
-        #     tf.imwrite(self.PathDir + '/Distance_map.tiff',1-self.dist)
-        #     tf.imwrite(self.PathDir + '/IPF_X.tiff',IPF_map_X)
-        #     tf.imwrite(self.PathDir + '/IPF_Y.tiff',IPF_map_Y)
-        #     tf.imwrite(self.PathDir + '/IPF_Z.tiff',IPF_map_Z)
-        #     if self.nPhases > 1:
-        #         tf.imwrite(self.PathDir + '/Phase_map.tiff', phaseMap)
-        # else: 
-        #     # tf.imwrite(self.StackDir + '/Quality_map.tiff', np.rot90(np.flip(self.indexation[0].quality_map, 0), k=1, axes=(1, 0)))
-        #     # tf.imwrite(self.StackDir + '/Distance_map.tiff',np.rot90(np.flip(1-self.indexation[0].nScoresDist, 1), k=1, axes=(2, 1)))
-        #     tf.imwrite(self.StackDir + '/Quality_map.tiff', np.rot90(np.flip(self.quality_final, 0), k=1, axes=(1, 0)))
-        #     tf.imwrite(self.StackDir + '/Distance_map.tiff',1-self.dist)
-        #     tf.imwrite(self.StackDir + '/IPF_X.tiff',IPF_map_X)
-        #     tf.imwrite(self.StackDir + '/IPF_Y.tiff',IPF_map_Y)
-        #     tf.imwrite(self.StackDir + '/IPF_Z.tiff',IPF_map_Z)
-        #     if self.nPhases > 1:
-        #         tf.imwrite(self.StackDir + '/Phase_map.tiff', phaseMap)
                 
         if self.flag_folder == 1:
             directory = self.PathDir
@@ -958,9 +812,9 @@ class MainWindow(uiclass, baseclass):
             directory = self.StackDir
         tf.imwrite(directory + '/Quality_map.tiff', np.rot90(np.flip(self.quality_final, 0), k=1, axes=(1, 0)))
         tf.imwrite(directory + '/Distance_map.tiff',1-self.dist)
-        tf.imwrite(directory + '/IPF_X.tiff',IPF_map_X)
-        tf.imwrite(directory + '/IPF_Y.tiff',IPF_map_Y)
-        tf.imwrite(directory + '/IPF_Z.tiff',IPF_map_Z)
+        tf.imwrite(directory + '/IPF_X.tiff', IPF_map_X)
+        tf.imwrite(directory + '/IPF_Y.tiff', IPF_map_Y)
+        tf.imwrite(directory + '/IPF_Z.tiff', IPF_map_Z)
         if self.nPhases > 1:
             tf.imwrite(directory + '/Phase_map.tiff', np.rot90(np.flip(phaseMap, 0), k=1, axes=(1,0)))
             
@@ -1003,12 +857,6 @@ class MainWindow(uiclass, baseclass):
             try:
                 self.x = int(mousePoint.x())
                 self.y = int(mousePoint.y())
-                
-                # self.label_Quality.setText("Quality indice: " + str(np.round(self.quality_final[self.x, self.y],1)) + "%")
-                # if self.nPhases > 1:
-                #     p = self.phase_map[self.x, self.y]
-                #     name = self.preInd.phaseList[p].name
-                #     self.label_phases.setText("Phase map: " + name)
                     
             except:
                 pass

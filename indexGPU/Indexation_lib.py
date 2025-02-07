@@ -565,45 +565,6 @@ class IndexationGPUderiv:
         QApplication.processEvents()
 
 #%% Pre-indexation
-class phaseObject_old:
-    """
-    Classe permettant de stocker les chemins des fichiers CIF et DB, le workflow correspondant et la taille de la DB.
-    """
-    
-    def __init__(self):
-                
-        #Stockage CIF
-        filepath,  self.CifDir = gf.getFilePathDialog('CIF selection')
-        self.CifLoc = filepath[0]
-        #Stockage DB
-        filepath, self.DatabaseDir = gf.getFilePathDialog('theoretical test profiles (*.crddb)')
-        self.DatabaseLoc = filepath[0]
-        
-        # Initialization
-        self.DB_Size = 2_000_000
-        self.SG = False
-        self.diff = 0
-        self.SG_win = 3
-        self.SG_poly = 2
-
-        # User interaction to load indexation parameters
-        self.phaseIndex = phaseClass.phaseIndexParam(self)
-        self.phaseIndex.exec_()
-        
-        #Creation workflow
-        if self.SG:
-            Op = ['Diff', self.diff, self.SG_win, self.SG_poly]
-        else:
-            Op = ['Diff', self.diff]
-            
-        self.Workflow = [Op]
-        
-        # print(f"phaseLoading.DB_Size : {self.DB_Size}")
-        # print(f"phaseLoading.SG : {self.SG}")
-        # print(f"phaseLoading.diff : {self.diff}")
-        # print(f"phaseLoading.SG_win : {self.SG_win}")
-        # print(f"phaseLoading.SG_poly : {self.SG_poly}")
-
 class phaseObject:
     """
     Classe permettant de stocker les chemins des fichiers CIF et DB, le workflow correspondant et la taille de la DB.
@@ -651,16 +612,6 @@ class preIndexation:
         self.SymQ = []
         self.otsu_map = []
         self.listToIndex =[]
-        
-        # Profile stack loading
-        # self.StackLoc, self.StackDir = gf.getFilePathDialog("série d'images à indexer (*.tiff)")
-        # checkimage = tf.TiffFile(self.StackLoc[0]).asarray() # Check for dimension. If 2 dimensions : 2D array. If 3 dimensions : stack of images
- 
-        # if checkimage.ndim != 3: # Check if the data is not an image series
-        #     self.popup_message("IniCHORD","Please import a stack of images.",'icons/Main_icon.png')
-        #     return 
-        # else:
-        #     self.Stack = tf.TiffFile(self.StackLoc[0]).asarray()
         
         # User interaction to load indexation parameters
         self.phaseIndex = phaseClass.phaseForm(self, parent.nPhases, parent.otsu)
