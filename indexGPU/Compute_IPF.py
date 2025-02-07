@@ -35,7 +35,7 @@ print('hey')
 
 #%% fonctions
 
-def Display_IPF_GUI(CIFpath, nScoresOri, listCoord, IPF_view):
+def Display_IPF_GUI(CIFpath, nScoresOri, listCoord,  listToIndex, IPF_view):
     # CIFpath is the list of CIF paths for the analyse : list
     # nScoresOri is the final ori map : 
     # IPF_view is the axis for the IPF : string
@@ -56,18 +56,18 @@ def Display_IPF_GUI(CIFpath, nScoresOri, listCoord, IPF_view):
         numSG.append(crys["_space_group_IT_number"])
         PG.append(symmetry.get_point_group(int(numSG[i]), True).name)
     
-    quats = nScoresOri[0, :, :, :]
+    quats = nScoresOri
     
     if IPF_view == "X":
-        IPFim, xmap = IPF_Z_GUI(quats, PhaseName, PG, phase, listCoord, Ipf_dir = Vector3d.xvector())
+        IPFim, xmap = IPF_Z_GUI(quats, PhaseName, PG, phase, listCoord, listToIndex, Ipf_dir = Vector3d.xvector())
     elif IPF_view == "Y":
-        IPFim, xmap = IPF_Z_GUI(quats, PhaseName, PG, phase,  listCoord, Ipf_dir = Vector3d.yvector())
+        IPFim, xmap = IPF_Z_GUI(quats, PhaseName, PG, phase,  listCoord,listToIndex, Ipf_dir = Vector3d.yvector())
     elif IPF_view == "Z":
-        IPFim, xmap = IPF_Z_GUI(quats, PhaseName, PG, phase, listCoord, Ipf_dir = Vector3d.zvector())
+        IPFim, xmap = IPF_Z_GUI(quats, PhaseName, PG, phase, listCoord,listToIndex, Ipf_dir = Vector3d.zvector())
 
     return IPFim
 
-def IPF_Z_GUI(simple_quats, PhaseName, PG, phase, listCoord, Ipf_dir = Vector3d.zvector()):
+def IPF_Z_GUI(simple_quats, PhaseName, PG, phase, listCoord, listToIndex, Ipf_dir = Vector3d.zvector()):
 
     # before these operations, quaternions (axe 0), height (axe 10), width (axe 2)
     simple_quats = np.rot90(simple_quats, 1, (1, 0))
@@ -81,9 +81,13 @@ def IPF_Z_GUI(simple_quats, PhaseName, PG, phase, listCoord, Ipf_dir = Vector3d.
     page = np.zeros((height * width, 7))
     k = 0
     
-    for i, p in enumerate(listCoord) :
+    for i, p in enumerate(listCoord):
+        if listToIndex[i]:
+            w = i
+        else:
+            w = -1
         for c in p:     
-            page[k, 0] = i
+            page[k, 0] = w
             page[k, 1] = c[0]
             page[k, 2] = c[1]
             page[k, 3] = simple_quats[c[0], c[1], 0]
@@ -113,7 +117,7 @@ def IPF_Z_GUI(simple_quats, PhaseName, PG, phase, listCoord, Ipf_dir = Vector3d.
         names=PhaseName,
         point_groups=PG,
         structures=phase)
-    
+    # print("phase_list :", phase_list)
     # Create a CrystalMap instance
     xmap2_i = CrystalMap(rotations=rotations_i, phase_id=phase_id, x=x, y=y, phase_list=phase_list)
     xmap2_i.scan_unit = "um"
@@ -121,13 +125,19 @@ def IPF_Z_GUI(simple_quats, PhaseName, PG, phase, listCoord, Ipf_dir = Vector3d.
     # select a correct color code according to the Point Group
     # Pick up the CrystalMap attribute
     pointGroups = xmap2_i.phases.point_groups
+    # print("pointGroups :", pointGroups)
+    
     # Pick up Phases attributes
     pg_laue = []
     o_Cu = []
     ipf_key = []
     rgb_i = []
+
     for i in range(len(PhaseName)):
-        pg_laue.append(pointGroups[i].laue)
+        if -1 in phase_id:
+            pg_laue.append(pointGroups[i+1].laue)
+        else:
+            pg_laue.append(pointGroups[i].laue)
         o_Cu.append(xmap2_i[PhaseName[i]].orientations)
         ipf_key.append(orixPlot.IPFColorKeyTSL(pg_laue[i], direction=Ipf_dir))
         rgb_i.append(ipf_key[i].orientation2color(o_Cu[i]))
@@ -136,10 +146,15 @@ def IPF_Z_GUI(simple_quats, PhaseName, PG, phase, listCoord, Ipf_dir = Vector3d.
     
     rgb = np.zeros((height, width, 3))
     i = 0
-    for p in rgb_i :
-        for c in p:
-            rgb[int(x[i]), int(y[i]), :] = c
-            i += 1
+    p = 0
+    for ph, val in enumerate(listToIndex):
+        if val:
+            for col in rgb_i[p]:
+                rgb[int(x[i]), int(y[i]), :] = col
+                i += 1
+            p += 1
+        else:
+            i += len(listCoord[ph])
 
     return rgb, xmap2_i
 

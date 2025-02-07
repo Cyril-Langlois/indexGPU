@@ -366,7 +366,7 @@ QHeaderView::section {
         <item>
          <widget class="QGroupBox" name="groupBox">
           <property name="title">
-           <string>Initialization</string>
+           <string>GPU settings</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_9">
            <item>

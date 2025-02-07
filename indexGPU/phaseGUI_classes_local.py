@@ -67,6 +67,9 @@ class phaseForm(uiclass, baseclass):
             self.gB_DB.setVisible(False)
             self.gB_workflow.setVisible(False)
             self.indexQuestion.setEnabled(False)
+            self.LabelsSeries.ui.histogram.hide()
+            self.LabelsSeries.ui.roiBtn.hide()
+            self.LabelsSeries.ui.menuBtn.hide()
             if self.nbPhase > 1 : 
                 self.next_button.setEnabled(False)
 

@@ -104,8 +104,8 @@ class MainWindow(uiclass, baseclass):
         
         self.savgol_label1.setVisible(False) # Hide window label for savgol
         self.savgol_label2.setVisible(False) # Hide order label for savgol
-        
-        self.PresetBox.currentIndexChanged.connect(self.hide_and_show)
+        self.PresetBox.setVisible(False)
+        # self.PresetBox.currentIndexChanged.connect(self.hide_and_show)
 
         self.TheoProfiles.stateChanged.connect(self.drawCHORDprofiles) # Allow the visualization of the theoretical profiles
         self.ModProfiles.stateChanged.connect(self.drawCHORDprofiles) # Allow the visualization of the profiles used for indexing
@@ -172,7 +172,8 @@ class MainWindow(uiclass, baseclass):
     def setPhaseNum(self):
         self.nPhases = self.spinBox_phase_num.value()
         if self.nPhases > 1:
-            self.checkBox_otsu.setVisible(True)
+            if self.cluster == False:
+                self.checkBox_otsu.setVisible(True)
             self.label_phases.setVisible(True) # Show label phasemap
             self.PhaseMap.setVisible(True) # Show phase map
         else:
@@ -197,6 +198,7 @@ class MainWindow(uiclass, baseclass):
             if len(self.Current_stack[1])==1: #pour cluster, (profiles, hauteur, largeur) avec hauteur=1 car ligne de profiles
                 self.cluster = True
                 self.expSeries.setVisible(False) # Hide the image serie display window
+                self.checkBox_otsu.setVisible(False)
                 self.Info_box.ensureCursorVisible()
                 self.Info_box.insertPlainText("\n \u2022 Enter in clustering indexation mode.")
                 # QApplication.processEvents()
@@ -464,6 +466,7 @@ class MainWindow(uiclass, baseclass):
         except:
             StackLoc, StackDir = gf.getFilePathDialog("labeled map") 
             labels = tf.TiffFile(StackLoc[0]).asarray() # Import the label map
+        self.labels = labels
         
         # Generation of the maps using the information of the clustered map          
         # Create the new arrays using np.where
@@ -527,11 +530,23 @@ class MainWindow(uiclass, baseclass):
         self.listCoordPhases = []
         
         qualityShape = self.indexation[0].nScoresDist.shape
+        
+        if  self.cluster and 0 in self.labels:
+            # If no Grain Boundaries, labels start at 1, else at 0
+            # Creation of a new not indexed phase corresponding to GB
+            self.nPhases += 1
+            self.preInd.listToIndex.append(False)
+            qual = np.zeros((qualityShape[1], qualityShape[2])) #Creation of a fictive quality map for this new phase
+            qual[self.labels == 0] = 1
+            
         quality = np.zeros ((self.nPhases, qualityShape[1], qualityShape[2]))
         
         # Creation of a quality map stack
         for i in range (self.nPhases):
-            quality[i, :, :] = self.indexation[i].quality_map
+            if self.cluster and i == self.nPhases-1:
+                quality[i, :, :] = qual
+            else :
+                quality[i, :, :] = self.indexation[i].quality_map
         
         # Table of indices (=phase number) where the quality map is the greatest = phase map
         self.phase_map = np.argmax(quality, axis = 0) 
@@ -541,8 +556,10 @@ class MainWindow(uiclass, baseclass):
     
     def phase_discrimination(self):
         
+        if self.otsu == False:
+            self.phase_map_normal()
+            
         # Initialisation des éléments
-        
         if  self.cluster:
             lenProf = self.indexation[0].rawImage.shape[0]
             width = self.indexation[0].rawImage.shape[2]
@@ -564,24 +581,20 @@ class MainWindow(uiclass, baseclass):
         
         self.rawImage = np.zeros((lenProf, height, width))
         self.quality_final = np.zeros((height, width))
-        self.ori = np.zeros((1, 4, height, width))
+        self.ori_f = np.zeros((4, height, width))
         self.dist = np.zeros((1, height, width))
         self.theo_stack = np.zeros((lenProf, height, width))
         self.stack_mod = np.zeros((lenProf,height, width))
+        self.expStack_mod = np.zeros((lenProf, height, width))
         
-        print("raw image :", self.rawImage.shape)
-        print("quality final :", self.quality_final.shape)
-        print("ori :", self.ori.shape)
-        print("dist :", self.dist.shape)
-        print("theo stack :", self.theo_stack.shape)
-        print("stack mod :", self.stack_mod.shape)
+        # print("raw image :", self.rawImage.shape)
+        # print("quality final :", self.quality_final.shape)
+        # print("ori :", self.ori.shape)
+        # print("dist :", self.dist.shape)
+        # print("theo stack :", self.theo_stack.shape)
+        # print("stack mod :", self.stack_mod.shape)
+        # print("expstack mod :", self.expStack_mod.shape)
         
-        if self.otsu == False:
-            self.phase_map_normal()
-        
-       
-        # print("quality map 0 :", self.indexation[0].quality_map.shape)
-        # print("quality map 1 :", self.indexation[1].quality_map.shape)
         listCIF = []
         for p, val in enumerate(self.preInd.listToIndex):
             if val:
@@ -592,15 +605,22 @@ class MainWindow(uiclass, baseclass):
                     if self.otsu: # In otsu case, the quality map is an array of shape : (number of pix in phase p, 1)
                         x = i-1
                         y = 0
+                        diffIm = self.indexation[p].diffImage2D.reshape((lenProf, len(self.listCoordPhases[p]), 1))
                     else:         # In normal case, the quality map is an array of shape : (height, width)
                         x = c[0]
                         y = c[1]
+                        if self.cluster:
+                            diffIm = self.indexation[p].testArrayList
+                        else:
+                            diffIm = self.indexation[p].diffImage2D.reshape((lenProf, height, width))
+                        
                     self.rawImage[:, c[0], c[1]] = self.indexation[p].rawImage[:, x, y]
                     self.quality_final[c[0], c[1]] = self.indexation[p].quality_map[x, y]
-                    self.ori[0, :, c[0], c[1]] = self.indexation[p].nScoresOri[0, :, x, y]
+                    self.ori_f[:, c[0], c[1]] = self.indexation[p].nScoresOri[0, :, x, y]
                     self.dist[0, c[0], c[1]] = self.indexation[p].nScoresDist[0, x, y]
                     self.theo_stack[:, c[0], c[1]] = self.indexation[p].nScoresStack[0, :, x, y]
                     self.stack_mod[:, c[0], c[1]] = self.indexation[p].Treatment_theo_prof[0, :, x, y]
+                    self.expStack_mod[:, c[0], c[1]] = diffIm[:, x, y]
                      
                     # self.rawImage[:, c[0], c[1]] = self.indexation[p].rawImage[:, x, y] 
                     # self.quality_final[c[0], c[1]] = self.indexation[p].quality_map[x, y]
@@ -611,9 +631,9 @@ class MainWindow(uiclass, baseclass):
                    
                 
                 
-        self.IPF_final_X = IPF_computation.Display_IPF_GUI(listCIF, self.ori, self.listCoordPhases, 'X')
-        self.IPF_final_Y = IPF_computation.Display_IPF_GUI(listCIF, self.ori, self.listCoordPhases, 'Y')
-        self.IPF_final_Z = IPF_computation.Display_IPF_GUI(listCIF, self.ori, self.listCoordPhases, 'Z')
+        self.IPF_final_X = IPF_computation.Display_IPF_GUI(listCIF, self.ori_f, self.listCoordPhases, self.preInd.listToIndex, 'X')
+        self.IPF_final_Y = IPF_computation.Display_IPF_GUI(listCIF, self.ori_f, self.listCoordPhases, self.preInd.listToIndex, 'Y')
+        self.IPF_final_Z = IPF_computation.Display_IPF_GUI(listCIF, self.ori_f, self.listCoordPhases, self.preInd.listToIndex, 'Z')
                 
             
     def Run_indexation(self):
@@ -687,7 +707,8 @@ class MainWindow(uiclass, baseclass):
         
         # self.ori before swapaxe : quaternions (axe 0), height (axe 1), width (axe 2)
         # self.ori = self.indexation[0].nScoresOri[0,:,:,:]
-        self.ori = np.swapaxes(self.ori, 1, 2)
+        # self.ori = self.ori_f[0,:,:,:]
+        self.ori = np.swapaxes(self.ori_f, 1, 2)
         # self.ori after swapaxe : quaternions (axe 0), height (axe 1), width (axe 2)
                 
         # self.indexation[0].quality_map = np.flip(self.indexation[0].quality_map, 0) # Flip the array
@@ -714,13 +735,13 @@ class MainWindow(uiclass, baseclass):
         # Flip and rotate self.nScoresDist to be homogenenous (for computation)
         # self.indexation[0].nScoresDist = np.flip(self.indexation[0].nScoresDist, 1)
         # self.indexation[0].nScoresDist = np.rot90(self.indexation[0].nScoresDist, k=1, axes=(2, 1))
-        # self.dist = np.flip(self.dist, 1)
-        # self.dist = np.rot90(self.dist, k=1, axes=(2, 1))
+        self.dist = np.flip(self.dist, 1)
+        self.dist = np.rot90(self.dist, k=1, axes=(2, 1))
         
         # For viewing data diff or not OR theo profiles : extract of the first and only score then flip and rotate       
         self.Current_stack = self.rawImage # Extract the stack of images
-        print("len current stack [0, :, 0] = ", len(self.Current_stack[0, :, 0]))
-        print("len current stack [0, 0, :] = ", len(self.Current_stack[0, 0, :]))
+        # print("len current stack [0, :, 0] = ", len(self.Current_stack[0, :, 0]))
+        # print("len current stack [0, 0, :] = ", len(self.Current_stack[0, 0, :]))
         
         # self.theo_stack = self.indexation[0].nScoresStack[0, :, :, :]
         self.theo_stack = np.flip(self.theo_stack, 1)
@@ -730,7 +751,7 @@ class MainWindow(uiclass, baseclass):
         self.stack_mod = np.flip(self.stack_mod, 1)
         self.stack_mod = np.rot90(self.stack_mod, k=1, axes=(2, 1))
         
-        self.expStack_mod = self.indexation[0].testArrayList
+        # self.expStack_mod = self.indexation[0].testArrayList
         self.expStack_mod = np.flip(self.expStack_mod, 1)
         self.expStack_mod = np.rot90(self.expStack_mod, k=1, axes=(2, 1))
         
@@ -870,6 +891,11 @@ class MainWindow(uiclass, baseclass):
         self.qualValue = np.zeros((1,profileLength))
         
         # Extract the row and column position and search for quality and quaternions values associated
+        r_o = int(ROIcoords[0, 0])
+        c_o = int(ROIcoords[1, 0])
+        phase_o = int(self.phase_map[r_o, c_o])
+        SymQ = self.preInd.SymQ[phase_o]
+        
         for i in range(profileLength):
             r = int(ROIcoords[0, i])
             c = int(ROIcoords[1, i])
@@ -882,7 +908,8 @@ class MainWindow(uiclass, baseclass):
         
         for i in range(profileLength): # For each pixel, compute the disorientation from the origin quaternion
             currentQuat = Quaternion(OriValues[:, i]).inverse
-            self.disOvalues[i] = xa.disOfromQuatSymNoMat(origineQuat, currentQuat, self.SymQ)[1]
+            
+            self.disOvalues[i] = xa.disOfromQuatSymNoMat(origineQuat, currentQuat, SymQ)[1]
         
         self.drawqual()
         self.drawMisO()
@@ -992,9 +1019,7 @@ class MainWindow(uiclass, baseclass):
                     self.label_Quality.setText("Quality index: " + str(np.round(self.quality_final[self.x, self.y],1)) + "%")
                     if self.nPhases > 1:
                         p = int(self.phase_map[self.x, self.y])
-                        print("p :", p, type(p))
                         name = self.preInd.phaseList[p].name
-                        print("name :", name)
                         self.label_phases.setText("Phase map: " + name)
             except:
                 pass
@@ -1257,7 +1282,7 @@ class MainWindow(uiclass, baseclass):
         histplot = self.PhaseMap.getHistogramWidget()
         histplot.setBackground(self.parent.color1)
         
-        self.PhaseMap.setColorMap(pg.colormap.getFromMatplotlib('copper'))
+        self.PhaseMap.setColorMap(pg.colormap.get('CET-L10'))
         self.PhaseMap.autoRange()
         
     def defaultIV(self):

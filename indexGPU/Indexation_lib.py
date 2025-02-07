@@ -226,7 +226,7 @@ class IndexationGPUderiv:
         
         rawImage2D = self.rawImage.reshape(self.dimExpProfiles, self.height * self.width)
         
-        diffImage2D = fct.Profile_modifier(rawImage2D, self.Workflow, self.normType, axProf = 0)
+        self.diffImage2D = fct.Profile_modifier(rawImage2D, self.Workflow, self.normType, axProf = 0)
         self.expChunkNB = np.floor_divide(self.height * self.width, self.nbSTACK)
         self.remainSTACK = (self.height * self.width) % self.nbSTACK
         
@@ -235,12 +235,12 @@ class IndexationGPUderiv:
         
         i = 0
         for i in range(self.expChunkNB):
-            self.testArrayList.append(diffImage2D[:,i*self.nbSTACK:(i+1)*self.nbSTACK])
+            self.testArrayList.append(self.diffImage2D[:,i*self.nbSTACK:(i+1)*self.nbSTACK])
         
         self.remain = 0
         if self.remainSTACK != 0:
             self.remain = 1
-            self.testArrayList.append(diffImage2D[:, -self.remainSTACK:])
+            self.testArrayList.append(self.diffImage2D[:, -self.remainSTACK:])
     
     def initIndexation(self):
         self.dbChunks = self.nbDB # 1/8 des profils d'un DataChunk. 62_500 sur UltraCalculus, 25_000 sur ordi perso
