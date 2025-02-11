@@ -94,7 +94,7 @@ class phaseForm(uiclass, baseclass):
     #METHODES
 
     def setDBSizeMax(self):
-        # Reads the DB file and sets the maximum value to enter in the DB-size to the number of profiles
+        # Reads the DB file and sets the maximum value to write in the DB-size to the number of profiles
         # that the given file contains
         
         f = h5py.File(self.list_DB[self.page], 'r')
@@ -103,7 +103,7 @@ class phaseForm(uiclass, baseclass):
         for key in listKeys:
             if "DataChunk" in key:
                 listChunkArrays.append(key)
-        self.list_DB_size_max[self.page] = 250_000*len(listChunkArrays)
+        self.list_DB_size_max[self.page] = 250_000*len(listChunkArrays) # All chunks contain 250_000 profiles
         
     def setPhaseName(self):
         crys = da.functions_crystallography.readcif(self.list_CIF[self.page])
@@ -135,9 +135,9 @@ class phaseForm(uiclass, baseclass):
         # Checks if the entered ostu matches with the given number of phases
         # Creates a list of maps with 2 values : 1 for the current phase to display, 0 for the others
         
-        nbClass = np.max(self.label_map) + 1
+        nbClass = int(np.max(self.label_map) + 1)
         if nbClass != self.nbPhase:
-            self.showMsgBox("Number of class in otsu map is different from the number of phases.")
+            self.showMsgBox(f"Number of class in otsu map is different from the number of phases. Number of class : {nbClass}")
         else:
             self.thresholded_maps = []
             for i in range (self.nbPhase):
@@ -265,7 +265,8 @@ class phaseForm(uiclass, baseclass):
                 self.parent.phaseList.append(phaseO)
             
             self.parent.listToIndex = self.list_toIndex
-            
+            self.parent.DBsizeList = self.list_DB_size
+
             if self.otsu:
                 self.parent.otsu_map = self.label_map
             

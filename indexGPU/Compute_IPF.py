@@ -94,13 +94,14 @@ def IPF_Z_GUI(simple_quats, PhaseName, PG, phase, listCoord, listToIndex, Ipf_di
             page[k, 6] = simple_quats[c[0], c[1], 3]
     
             k += 1
-
+            
+    #Creation of the elements necessary to instance a CrystalMap        
     phase_id = page[:, 0]     # array storing phase corresponding the quaternion 
     y = page[:, 2]            # array storing Y position corresponding the quaternion
     x = page[:, 1]            # array storing X position corresponding the quaternion
     quats = page[:, 3:]       # array storing quaternions along a row
     
-    # conversion Quaternion -> axe-angle because Orix does not allow for direct quaternion loading
+        # conversion Quaternion -> axe-angle because Orix does not allow for direct quaternion loading
     axes_i = np.zeros((len(quats), 3))
     angles_i = np.zeros((len(quats),1))
     

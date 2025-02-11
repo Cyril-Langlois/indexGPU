@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import QMessageBox
 from PyQt5 import QtGui
 from PyQt5.QtGui import QPixmap
 
-def DBopen(DB):
+def DBopen(DB, nChunks):
     '''    
     Parameters
     ----------
@@ -70,11 +70,11 @@ def DBopen(DB):
     listLabelArray = []
     
     for i in listKeys:
-        if "LabelChunk" in i:
+        if "LabelChunk" in i and len(listLabelNames) < nChunks:
             listLabelNames.append(i)
-        elif "DataChunk" in i:
+        elif "DataChunk" in i and len(listChunksNames) < nChunks:
             listChunksNames.append(i)
-
+    
     for i in range(len(listChunksNames)):
         listChunkArrays.append(np.asarray(f[listChunksNames[i]]))
         listLabelArray.append(np.asarray(f[listLabelNames[i]]))
@@ -112,7 +112,7 @@ class IndexationGPUderiv:
     texte en quaternions et en Euler. 
     '''    
 
-    def __init__(self, parent, Image, savePath, database, CIFfile, Workflow=[['Diff',0]], normType = "centered euclidian", nbSTACK=20_000, nbDB = 20_000, dimPROF = 180):
+    def __init__(self, parent, Image, savePath, database, CIFfile, nChunks, Workflow=[['Diff',0]], normType = "centered euclidian", nbSTACK=20_000, nbDB = 20_000, dimPROF = 180):
         self.parent = parent      
 
         # instruction pour afficher les tableaux de façon lisible
@@ -124,7 +124,8 @@ class IndexationGPUderiv:
             self.mempool.set_limit(fraction=1.0)    
         
         self.savePath = savePath   
-       
+        
+        self.nbChunks = nChunks
         self.rawImage = Image    
         self.DB = database
         self.CIF = CIFfile
@@ -189,7 +190,7 @@ class IndexationGPUderiv:
         self.parent.Info_box.insertPlainText("\n \u2022 Theoretical data preparation.")
         QApplication.processEvents()
         
-        self.listLabelNames, self.listChunksNames, self.listChunkArrays, self.listLabelArray, self.rawProfileLength = DBopen(self.DB)
+        self.listLabelNames, self.listChunksNames, self.listChunkArrays, self.listLabelArray, self.rawProfileLength = DBopen(self.DB, self.nbChunks)
         
         # détermination du facteur de réduction
         actualRatio = self.rawProfileLength / self.dimExpProfiles
@@ -567,7 +568,7 @@ class IndexationGPUderiv:
 #%% Pre-indexation
 class phaseObject:
     """
-    Classe permettant de stocker les chemins des fichiers CIF et DB, le workflow correspondant et la taille de la DB.
+    Classe permettant de stocker les chemins des fichiers CIF et DB, le workflow correspondant, la taille de la DB et le nom de la phase.
     """
     
     def __init__(self):
@@ -596,8 +597,8 @@ class phaseObject:
         
 class preIndexation:
     """
-    Classe permettant d'entrer en mémoire la stack à indexer, ainsi que le 
-    fichier CIF correspondant (indexation monophasée) et la base de données. 
+    Classe permettant d'entrer en mémoire la liste des phases, des phases à indexer
+    et la carte otsu si nécessaire.
     Les dialogues "utilisateurs" se font au travers de la librairie 
     "General_functions".
     
@@ -612,6 +613,8 @@ class preIndexation:
         self.SymQ = []
         self.otsu_map = []
         self.listToIndex =[]
+        self.DBsizeList = []
+        self.chunksList = []
         
         # User interaction to load indexation parameters
         self.phaseIndex = phaseClass.phaseForm(self, parent.nPhases, parent.otsu)
@@ -619,6 +622,14 @@ class preIndexation:
         
         for i, phase in enumerate(self.phaseList):
             self.SymQ.append(sy.get_proper_quaternions_from_CIF(phase.CifLoc)) # Get the variable symQ for symmetry of quaternions
+          
+        for i, val in enumerate (self.listToIndex):
+            if val:
+                self.chunksList.append(np.floor(int (self.DBsizeList[i])/250_000))
+                if int(self.DBsizeList[i])%250_000 != 0 :
+                    self.chunksList[i] += 1
+            else :
+                self.chunksList.append(None)           
         
         
     def popup_message(self,title,text,icon):

@@ -184,8 +184,8 @@ class MainWindow(uiclass, baseclass):
         self.otsu = self.checkBox_otsu.isChecked()
     
     def loadProfiles(self):
-        # Creation of self.Current_stack to be use elsewhere
-        
+        # Loads the stack or clustered profiles
+
         self.StackLoc, self.StackDir = gf.getFilePathDialog("série d'images à indexer (*.tiff)")
         checkimage = tf.TiffFile(self.StackLoc[0]).asarray() # Check for dimension. If 2 dimensions : 2D array. If 3 dimensions : stack of images
  
@@ -202,22 +202,24 @@ class MainWindow(uiclass, baseclass):
                 self.Info_box.ensureCursorVisible()
                 self.Info_box.insertPlainText("\n \u2022 Enter in clustering indexation mode.")
                 QApplication.processEvents()
-            else:   
+            else: 
+                self.cluster = False
                 self.Current_stack = np.flip(self.Current_stack, 1) # Flip the array
                 self.Current_stack = np.rot90(self.Current_stack, k=1, axes=(2, 1)) # Rotate the array
                 self.displayExpStack(self.Current_stack) # Display the 3D array
 
         
-    def loaddata(self): # Allow to load the image serie, the CIF file and the database
+    def loaddata(self):
+        # Open the phase form to create phases and set indexation parameters, CIF, data base...
+        
         self.Info_box.clear() # Clear the information box
         
-        self.preInd = indGPU.preIndexation(self) # Ask to open the three files
+        self.preInd = indGPU.preIndexation(self) # Ask to open phase form
         
         # Storage folder creation
         ti = time.strftime("%Y-%m-%d__%Hh-%Mm-%Ss") # Absolute time 
         
         directory = "Indexation_" + ti # Name of the main folder
-        # self.PathDir = os.path.join(self.preInd.StackDir, directory)  # where to create the main folder
         self.PathDir = os.path.join(self.StackDir, directory)  # where to create the main folder
         os.mkdir(self.PathDir)  # Create main folder
         
@@ -447,6 +449,8 @@ class MainWindow(uiclass, baseclass):
         self.savingRes_cluster()
         
     def creationListProfilesOtsu(self):
+        # Sets the phase map to Otsu map, creates a list of list of coordinates and a list of list of profiles
+        
         self.listCoordPhases = []
         self.phase_map = self.preInd.otsu_map
         self.phase_map = np.flip(self.phase_map, 1)
@@ -462,19 +466,23 @@ class MainWindow(uiclass, baseclass):
             self.profilesRaw.append(groupProfiles)
     
     def phase_map_normal(self):
-        #Discrimination based on quality maps
+        # Discrimination based on quality maps
+        # Creates a phase map and listCoordPhases 
+        
         self.listCoordPhases = []
         
         qualityShape = self.indexation[0].nScoresDist.shape
         
+        # If no Grain Boundaries, labels start at 1, else at 0
+        # Creation of a new not indexed phase corresponding to GB
+        # Creation of a phase map for this new phase
         if  self.cluster and 0 in self.labels:
-            # If no Grain Boundaries, labels start at 1, else at 0
-            # Creation of a new not indexed phase corresponding to GB
             self.nPhases += 1
             self.preInd.listToIndex.append(False)
             qual = np.zeros((qualityShape[1], qualityShape[2])) #Creation of a fictive quality map for this new phase
             qual[self.labels == 0] = 1
-            
+        
+        # Initialisation of the quality map stack
         quality = np.zeros ((self.nPhases, qualityShape[1], qualityShape[2]))
         
         # Creation of a quality map stack
@@ -491,11 +499,12 @@ class MainWindow(uiclass, baseclass):
             self.listCoordPhases.append(coord_phase)
     
     def phase_discrimination(self):
+        # Rebuild the final objects
         
         if self.otsu == False:
             self.phase_map_normal()
             
-        # Initialisation des éléments
+        # Initialisation of objects
         if  self.cluster:
             lenProf = self.indexation[0].rawImage.shape[0]
             width = self.indexation[0].rawImage.shape[2]
@@ -558,6 +567,7 @@ class MainWindow(uiclass, baseclass):
         if self.otsu:
             self.creationListProfilesOtsu()
         
+        # GPU settings
         self.BatchProfiles_value = self.Profiles_SpinBox.value() # Number of experimental profiles per batch
         self.BatchDatabase_value = self.Database_SpinBox.value() # Number of theoretical profiles per batch
         
@@ -579,7 +589,8 @@ class MainWindow(uiclass, baseclass):
                     
                 self.indexation.append(indGPU.IndexationGPUderiv(self, a, 
                                                         self.PathDir, self.preInd.phaseList[p].DatabaseLoc, 
-                                                        self.preInd.phaseList[p].CifLoc, 
+                                                        self.preInd.phaseList[p].CifLoc,
+                                                        self.preInd.chunksList[p],
                                                         Workflow = self.preInd.phaseList[p].Workflow, 
                                                         normType = "centered euclidian", nbSTACK=self.BatchProfiles_value,
                                                         nbDB = self.BatchDatabase_value))
@@ -596,7 +607,7 @@ class MainWindow(uiclass, baseclass):
 
         self.phase_discrimination()
             
-        # Keep the first and only score, then swapaxes
+        # Flip and rotate for display or computation
         
         self.ori = np.swapaxes(self.ori_f, 1, 2)
 
@@ -867,7 +878,10 @@ class MainWindow(uiclass, baseclass):
                     self.label_Quality.setText("Quality index: " + str(np.round(self.quality_final[self.x, self.y],1)) + "%")
                     if self.nPhases > 1:
                         p = int(self.phase_map[self.x, self.y])
-                        name = self.preInd.phaseList[p].name
+                        if self.preInd.listToIndex[p]:
+                            name = self.preInd.phaseList[p].name
+                        else:
+                            name = "Not indexed"
                         self.label_phases.setText("Phase map: " + name)
             except:
                 pass
