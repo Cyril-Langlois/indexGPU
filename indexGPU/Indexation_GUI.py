@@ -197,11 +197,23 @@ class MainWindow(uiclass, baseclass):
             self.Current_stack = self.Stack # Extract the stack of images
             if len(self.Current_stack[1])==1: #pour cluster, (profiles, hauteur, largeur) avec hauteur=1 car ligne de profiles
                 self.cluster = True
-                self.expSeries.setVisible(False) # Hide the image serie display window
+                # self.expSeries.setVisible(False) # Hide the image serie display window
                 self.checkBox_otsu.setVisible(False)
                 self.Info_box.ensureCursorVisible()
                 self.Info_box.insertPlainText("\n \u2022 Enter in clustering indexation mode.")
                 QApplication.processEvents()
+                try :
+                    labels = self.parent.Label_image
+                    labels = np.rot90(np.flip(labels, 0), k=1, axes=(0, 1))
+                except:
+                    StackLoc, StackDir = gf.getFilePathDialog("labeled map") 
+                    labels = tf.TiffFile(StackLoc[0]).asarray() # Import the label map
+                self.labels = labels
+                labelsDisplayed = labels
+                labelsDisplayed = np.rot90(np.flip(labelsDisplayed, 1), k=-1, axes=(1,0))
+                self.displayExpStack(labelsDisplayed)
+                # self.Info_box.insertPlainText("\n \u2022 Labeled map loadded.")
+                # QApplication.processEvents()
             else: 
                 self.cluster = False
                 self.Current_stack = np.flip(self.Current_stack, 1) # Flip the array
@@ -398,36 +410,36 @@ class MainWindow(uiclass, baseclass):
         
     def labelIndex(self):
         # Search for the labeled map or ask to import it
-        try :
-            labels = self.parent.Label_image
-            labels = np.rot90(np.flip(labels, 0), k=1, axes=(1, 0))
-        except:
-            StackLoc, StackDir = gf.getFilePathDialog("labeled map") 
-            labels = tf.TiffFile(StackLoc[0]).asarray() # Import the label map
-        self.labels = labels
+        # try :
+        #     labels = self.parent.Label_image
+        #     labels = np.rot90(np.flip(labels, 0), k=1, axes=(1, 0))
+        # except:
+        #     StackLoc, StackDir = gf.getFilePathDialog("labeled map") 
+        #     labels = tf.TiffFile(StackLoc[0]).asarray() # Import the label map
+        # self.labels = labels
         
         # Generation of the maps using the information of the clustered map          
         # Create the new arrays using np.where
         for p in range (0, self.nPhases):
-            self.indexation[p].quality_map_tempo = np.zeros((len(labels),len(labels[0])))
-            self.indexation[p].nScoresOri_tempo = np.zeros((1,4,len(labels),len(labels[0])))
-            self.indexation[p].nScoresDist_tempo = np.zeros((1,len(labels),len(labels[0])))
-            self.indexation[p].rawImage_tempo = np.zeros((len(self.indexation[p].rawImage),len(labels),len(labels[0])))
-            self.indexation[p].nScoresStack_tempo = np.zeros((1,len(self.indexation[p].nScoresStack[0]),len(labels),len(labels[0])))
-            self.indexation[p].Treatment_theo_prof_tempo = np.zeros((1,len(self.indexation[p].Treatment_theo_prof[0]),len(labels),len(labels[0])))
-            self.indexation[p].testArrayList_tempo = np.zeros((len(self.indexation[p].testArrayList),len(labels),len(labels[0])))
+            self.indexation[p].quality_map_tempo = np.zeros((len(self.labels),len(self.labels[0])))
+            self.indexation[p].nScoresOri_tempo = np.zeros((1,4,len(self.labels),len(self.labels[0])))
+            self.indexation[p].nScoresDist_tempo = np.zeros((1,len(self.labels),len(self.labels[0])))
+            self.indexation[p].rawImage_tempo = np.zeros((len(self.indexation[p].rawImage),len(self.labels),len(self.labels[0])))
+            self.indexation[p].nScoresStack_tempo = np.zeros((1,len(self.indexation[p].nScoresStack[0]),len(self.labels),len(self.labels[0])))
+            self.indexation[p].Treatment_theo_prof_tempo = np.zeros((1,len(self.indexation[p].Treatment_theo_prof[0]),len(self.labels),len(self.labels[0])))
+            self.indexation[p].testArrayList_tempo = np.zeros((len(self.indexation[p].testArrayList),len(self.labels),len(self.labels[0])))
     
             self.progressBar.setValue(0)
             self.progressBar.setFormat("Map formation: %p%")
-            self.progressBar.setRange(0, int(np.max(labels))-1) # Set the range accordingly to the number of labels
+            self.progressBar.setRange(0, int(np.max(self.labels))-1) # Set the range accordingly to the number of labels
     
-            for i in range(1,int(np.max(labels))):
+            for i in range(1,int(np.max(self.labels))):
                 
                 QApplication.processEvents()    
                 self.ValSlice = i
                 self.progression_bar()
                 
-                var = np.where(labels == i)
+                var = np.where(self.labels == i)
                 self.indexation[p].quality_map_tempo[var] = self.indexation[p].quality_map[:,i-1]
                 self.indexation[p].nScoresOri_tempo[:,:,var[0],var[1]] = self.indexation[p].nScoresOri[:,:,:,i-1]
                 self.indexation[p].nScoresDist_tempo[:,var[0],var[1]] = self.indexation[p].nScoresDist[:,:,i-1]
@@ -487,7 +499,7 @@ class MainWindow(uiclass, baseclass):
         
         # Creation of a quality map stack
         for i in range (self.nPhases):
-            if self.cluster and i == self.nPhases-1:
+            if self.cluster and 0 in self.labels and i == self.nPhases-1:
                 quality[i, :, :] = qual
             else :
                 quality[i, :, :] = self.indexation[i].quality_map
@@ -616,7 +628,7 @@ class MainWindow(uiclass, baseclass):
         self.displayQuality(self.quality_final) # Display the quality map
         
         
-        self.expSeries.setVisible(True) # Show the image serie display window
+        # self.expSeries.setVisible(True) # Show the image serie display window
         
         self.rawImage = np.flip(self.rawImage, 1) # Flip the array
         self.rawImage = np.rot90(self.rawImage, k=1, axes=(2, 1)) # Rotate the array
