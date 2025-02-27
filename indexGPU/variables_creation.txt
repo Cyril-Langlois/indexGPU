@@ -1,0 +1,73 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Feb 26 18:12:19 2025
+
+@author: clanglois1
+"""
+
+- quand on "loadProfiles", on crée une CurrentStack qui a le sens original de Tifffile, puis on la flip-rotate et on l'affiche. Ses dimensions sont alors (profile, width, height).
+ self.Stack est par contre non modifié.
+- quand on "loaddata", on crée un object self.preInd qui lui-même va créer des listes :
+            self.phaseList = []
+            self.SymQ = []
+            self.otsu_map = []
+            self.listToIndex =[]
+            self.DBsizeList = []
+            self.chunksList = []
+.. qui vont être remplies avec le résultat de la GUI phaseForm.
+
+- quand on clique sur "Indexation", le programme crée un objet IndexationGPUderiv, qui prend comme fichier self.Stack (donc non tourné)
+- puis l'indexation est lancée, ce qui renvoie :
+
+                    self.nScoresStack = nScoresStack.reshape((1, self.actualProfLength, self.height, self.width))
+                                    
+                    self.nScoresDist = nScoresDist.reshape((1, self.height, self.width))
+                    
+                    self.nScoresOri = nScoresOri.reshape((1, 4, self.height, self.width))
+                    
+                    self.Treatment_theo_prof = self.Treatment_theo_prof.reshape((1, self.actualProfLength, self.height , self.width))
+                    
+                    self.testArrayList = self.testArrayList.reshape((self.actualProfLength , self.height , self.width))
+                    
+                    rawImage = fct.centeredSTD(self.rawImage, 0)
+                    self.rawImage = rawImage (avec (profil, height, width))
+
+... qui sont accessibles dans le programme principal avec self.indexation[indice].nScoresStack par exemple. Le calcul de la carte de qualité suit immédiatement, 
+avec NCCcomputation qui prend en entrée pour les profils théoriques self.nScoresStack[0,:,:,:] non modifié (3D avec profile, height width) rangé dans la variable Theo_stack) et self.rawImage donc non modifié aussi
+La carto qui est retournée a pour dimensions (len(Theo_stack[0]),len(Theo_stack[0][0]) donc (height , width) directement dans la bonne dimension affichable a priori.
+Le résultat est stocké dans self.quality_map donc accessible depuis la GUI avec self.indexation[indice].quality_map
+
+- puis on passe dans self.phase_discrimination(). Qui lance phase_map_normal si on est en indexation par pixel (le standard pour l'instant)
+    * Dans phase_map_normal, on prend qualityShape = self.indexation[0].nScoresDist.shape (donc (1, self.height, self.width) donc pas affichable en l'état ). Au cours du processus, 
+    self.indexation[i].quality_map ne change pas de dimensions
+    
+    * Dans phase_discrimination, pour une indexation Pixel, on a :
+                        lenProf = self.Current_stack.shape[0]
+                        width = self.Current_stack.shape[1]
+                        height = self.Current_stack.shape[2]
+                        
+                        ...ce qui correspond bien à width et height vu que CurrentStack a vu le flip-rotate
+                    ensuite, les tableaux sont initialisés dans un format classique, pas destiné à etre affiché 
+                    
+                    print("lenProf : ", lenProf, "height : ", height, "  width : ", width)
+                    self.rawImage = np.zeros((lenProf, height, width))
+                    self.quality_final = np.zeros((height, width))
+                    self.ori_f = np.zeros((4, height, width))
+                    self.dist = np.zeros((1, height, width))
+                    self.theo_stack = np.zeros((lenProf, height, width))
+                    self.stack_mod = np.zeros((lenProf,height, width))
+                    self.expStack_mod = np.zeros((lenProf, height, width))
+                    listCIF = []
+                    
+                    Attention, là par exemple le self.rawImage ne modifie pas les données d'indexation car elles sont dans self.preind[indice].rawImage.
+                    C'est dédié à recevoir les données compilées qui seront flip-rotate ensuite normalement
+                    
+                    puis les IPF sont calculées avec les tableaux (lenProf, height, width)
+                    
+                    
+DONC, pour un reload qui passe par phase_discrimination, il faut envoyer tout dans les bonnes dimensions.
+On a vu que hormis Current Stack qui est flip-rotate dès le départ, les autres tableaux sont (lenProf, height, width) ou encore (4, height, width) pour les quaternions
+Donc, mimickons cela.
+
+
+

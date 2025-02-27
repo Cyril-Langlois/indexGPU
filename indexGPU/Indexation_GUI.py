@@ -121,6 +121,7 @@ class MainWindow(uiclass, baseclass):
         self.nPhases = 1
         self.otsu = False
         self.cluster = False
+        self.reloadH5 = False
 
 
 #%% Functions
@@ -219,11 +220,13 @@ class MainWindow(uiclass, baseclass):
                 self.Current_stack = np.flip(self.Current_stack, 1) # Flip the array
                 self.Current_stack = np.rot90(self.Current_stack, k=1, axes=(2, 1)) # Rotate the array
                 self.displayExpStack(self.Current_stack) # Display the 3D array
+                print("Current Stck shape after import : ", self.Current_stack.shape)
 
         
     def loaddata(self):
         # Open the phase form to create phases and set indexation parameters, CIF, data base...
         
+        self.reloadH5 = False
         self.Info_box.clear() # Clear the information box
         
         self.preInd = indGPU.preIndexation(self) # Ask to open phase form
@@ -241,49 +244,54 @@ class MainWindow(uiclass, baseclass):
         self.Info_box.insertPlainText("\n \u2022 Data have been loaded.")
         QApplication.processEvents()
 
-    def Reload_data(self): # Reload the H5 file
+    def Reload_data(self): # Reload the H5 file - 2025_02_26
+    
+        # If a quality_map already exists, delete it
         try:
             del(self.quality_map)
         except:
             pass
     
+        self.reloadH5 = True #a flag to select which operation to do to be specific to the reload situation
         self.Info_box.clear() # Clear the information box
         self.flag_folder = 0
         
+        # Locate indexation file *.h5
         self.StackLoc, self.StackDir = gf.getFilePathDialog("Indexation result (*.hdf5)") # Ask for the H5 result file
     
         f = h5py.File(self.StackLoc[0], 'r') # In order to read the H5 file
         listKeys = gf.get_dataset_keys(f) # Extract the listKeys of the H5 files
-                
+        
+        # load data from the h5 file        
         for i in listKeys:
             if "meanDisO" in i: # Extract meanDisO
-                self.meanDisO = np.asarray(f[i])
+                meanDisO = np.asarray(f[i])
             elif "nScoresDisO" in i: # Extract nScoresDisO
-                self.nScoresDisO = np.asarray(f[i])
+                nScoresDisO = np.asarray(f[i])
             elif "nScoresDist" in i: # Extract the distance
-                self.nScoresDist = np.asarray(f[i])
+                nScoresDist = np.asarray(f[i])
             elif "nScoresStack" in i: # Extract the theoretical stack
-                self.nScoresStack = np.asarray(f[i])
+                nScoresStack = np.asarray(f[i])
             elif "nScoresOri" in i: # Extract the quaternions
-                self.nScoresOri = np.asarray(f[i])
+                nScoresOri = np.asarray(f[i])
             elif "rawImage" in i: # Extract the experimental stack
-                self.rawImage = np.asarray(f[i])
+                rawImage = np.asarray(f[i])
             elif "Treatment_theo_prof" in i: # Extract the theoretical stack in it modified shape
-                self.Treatment_theo_prof = np.asarray(f[i])
+                Treatment_theo_prof = np.asarray(f[i])
             elif "testArrayList" in i: # Extract the experimental stack in it modified shape
-                self.testArrayList = np.asarray(f[i])
+                testArrayList = np.asarray(f[i])
             elif "quality_map" in i: # Extract the quality map
-                self.quality_map = np.asarray(f[i])
-                    
+                quality_map = np.asarray(f[i])
+        
         try: # Try to open testArrayList (modified exp profiles). In case of it doesn't exist, it become the raw stack 
-            self.testArrayList = self.testArrayList.reshape((len(self.testArrayList),len(self.rawImage[0]),len(self.rawImage[0][0])))
+            testArrayList = testArrayList.reshape((len(testArrayList),len(rawImage[0]),len(rawImage[0][0])))
         except:
-            self.testArrayList = self.rawImage
+            testArrayList = rawImage
             
         try: # Try to open Treatment_theo_prof (modified theo profiles). In case of it doesn't exist, it become the theoretical stack 
-            self.Treatment_theo_prof = self.Treatment_theo_prof.reshape((len(self.Treatment_theo_prof),len(self.Treatment_theo_prof[0]),len(self.rawImage[0]),len(self.rawImage[0][0])))
+            Treatment_theo_prof =Treatment_theo_prof.reshape((len(Treatment_theo_prof),len(Treatment_theo_prof[0]),len(rawImage[0]),len(rawImage[0][0])))
         except:
-            self.Treatment_theo_prof = self.nScoresStack
+            Treatment_theo_prof = nScoresStack
         
         self.Info_box.ensureCursorVisible()
         self.Info_box.insertPlainText("\n \u2022 Data have been loaded.")
@@ -291,10 +299,9 @@ class MainWindow(uiclass, baseclass):
         
         # Crystal information (single phase only) in the H5 file
         self.CIFpath = []
-        self.nbPhases = 1
-        self.phases = [] 
+        self.nPhases = 1
 
-        for h in range(self.nbPhases):
+        for h in range(self.nPhases):
             listKeys = gf.get_group_keys(f) # Extract ListKeys in order to determine the path of the CIF location
             for i in listKeys:
                 if "indexation" in i:
@@ -303,74 +310,42 @@ class MainWindow(uiclass, baseclass):
                             self.CIFpath.append(f[i].attrs[k])
 
         try: # Try to use this path to extract the wanted data
-            self.phases.append(diffpy.structure.loadStructure(self.CIFpath[0]))
-            self.crys = da.functions_crystallography.readcif(self.CIFpath[0])
             self.SymQ = sy.get_proper_quaternions_from_CIF(self.CIFpath[0])
             
         except: # If the location is unreachable, then it is mandatory to search manually
             self.popup_message("Indexation","Please import the CIF file",'icons/Indexation_icon.png')
             self.CIFpath[0] = filedialog.askopenfilename(title='fichier CIF', multiple=True)[0]
-            
-            self.phases.append(diffpy.structure.loadStructure(self.CIFpath[0]))
-            self.crys = da.functions_crystallography.readcif(self.CIFpath[0])
             self.SymQ = sy.get_proper_quaternions_from_CIF(self.CIFpath[0])
 
         self.Info_box.ensureCursorVisible()
         self.Info_box.insertPlainText("\n \u2022 CIF file has been loaded.")
         QApplication.processEvents()
 
-        self.PhaseName = self.crys["_chemical_formula_sum"]
-        self.numSG = self.crys["_space_group_IT_number"]
-        self.PG = symmetry.get_point_group(int(self.numSG), True).name
-
-        self.SymQ = sy.get_proper_quaternions_from_CIF(self.CIFpath[0]) # Get the variable symQ for symmetry of quaternions
-
         # Create self.Current_stack with flip and rotation
-        self.Current_stack = self.rawImage # Extract the stack of images
+        self.Current_stack = rawImage # Extract the stack of images
         self.Current_stack = np.flip(self.Current_stack, 1) # Flip the array
         self.Current_stack = np.rot90(self.Current_stack, k=1, axes=(2, 1)) # Rotate the array
-        
         self.displayExpStack(self.Current_stack) # Display the 3D array
 
-        # Flip and rotate self.nScoresDist to be homogenenous (for computation)
-        self.nScoresDist = np.flip(self.nScoresDist, 1)
-        self.nScoresDist = np.rot90(self.nScoresDist, k=1, axes=(2, 1))
-                   
-        # Keep the first and only score, then swapaxes
-        self.ori = self.nScoresOri[0,:,:,:]
-        self.ori = np.swapaxes(self.ori, 1, 2)
-        
-        # For viewing data diff or not OR theo profiles : extract of the first and only score then flip and rotate
-        self.theo_stack = self.nScoresStack[0, :, :, :]
-        self.theo_stack = np.flip(self.theo_stack, 1)
-        self.theo_stack = np.rot90(self.theo_stack, k=1, axes=(2, 1))
-        
-        self.stack_mod = self.Treatment_theo_prof[0, :, :, :]
-        self.stack_mod = np.flip(self.stack_mod, 1)
-        self.stack_mod = np.rot90(self.stack_mod, k=1, axes=(2, 1))
-        
-        self.expStack_mod = self.testArrayList
-        self.expStack_mod = np.flip(self.expStack_mod, 1)
-        self.expStack_mod = np.rot90(self.expStack_mod, k=1, axes=(2, 1))
-        
         self.slice_nbr = len(self.Current_stack) # Nbr of slice in the stack
         self.wind_NCC = int(np.round(0.1*self.slice_nbr)) # 1/10 of the total length 
-        
+
         # Computation of quality map
         try : 
-            self.quality_map = np.flip(self.quality_map, 0) # Flip the array
-            self.quality_map = np.rot90(self.quality_map, k=1, axes=(1, 0)) # Rotate the array
-            self.quality_final = self.quality_map
-            self.displayQuality(self.quality_map) # Display the quality map
+            self.quality_final = self.quality_map 
+            
+            self.quality_final = np.flip(self.quality_final, 0) # Flip the array
+            self.quality_final = np.rot90(self.quality_final, k=1, axes=(1, 0)) # Rotate the array
+
         except :    
             self.progressBar.setVisible(True) # The progress bar is shown for clarity
-            self.qualmap = self.NCC_computation(self.nScoresStack[0,:,:,:],self.rawImage, batchsize = 5000, Windows = self.wind_NCC)
+            self.qualmap = self.NCC_computation(nScoresStack[0,:,:,:],rawImage, batchsize = 5000, Windows = self.wind_NCC)
     
             self.quality_map = self.qualmap *100 # X100 to display in %
-            self.quality_map = np.flip(self.quality_map, 0) # Flip the array
-            self.quality_map = np.rot90(self.quality_map, k=1, axes=(1, 0)) # Rotate the array
+            self.quality_final = self.quality_map  
             
-            self.quality_final = self.quality_map
+            self.quality_final = np.flip(self.quality_final, 0) # Flip the array
+            self.quality_final = np.rot90(self.quality_final, k=1, axes=(1, 0)) # Rotate the array
             
             self.Info_box.ensureCursorVisible()
             self.Info_box.insertPlainText("\n \u2022 Quality map has been computed.")
@@ -378,35 +353,57 @@ class MainWindow(uiclass, baseclass):
             self.progressBar.setVisible(False) # The progress bar is hidden for clarity
         
         self.displayQuality(self.quality_final) # Display the quality map
-        
+
         self.Info_box.ensureCursorVisible()
         self.Info_box.insertPlainText("\n \u2022 Computation of IPF maps in progress.")
         QApplication.processEvents()
+
+        # Creation of self.indexation.xxx to be as the run_indexation approach
+        FakeIndexation = SimpleNamespace()
+        self.indexation =  [FakeIndexation]
+
+        self.indexation[0].nScoresDist = nScoresDist
+        self.indexation[0].CIF = self.CIFpath[0]
+        self.indexation[0].nScoresOri = nScoresOri
+        self.indexation[0].nScoresStack = nScoresStack
+        self.indexation[0].rawImage = rawImage
+        self.indexation[0].Treatment_theo_prof = Treatment_theo_prof
+        self.indexation[0].quality_final = self.quality_map
+        self.indexation[0].quality_map = self.quality_map
+        self.indexation[0].testArrayList = testArrayList
+
+        # run phase_discrimination to compute appropriate data to mimick a pixel indexation
+        self.listToIndex = [True]
+        self.phase_discrimination()
+
+        # Flip and rotate self.nScoresDist to be homogenenous (for computation)
+        self.nScoresDist = nScoresDist
+        self.nScoresDist = np.flip(self.nScoresDist, 1)
+        self.nScoresDist = np.rot90(self.nScoresDist, k=1, axes=(2, 1))
+                   
+        # Keep the first and only score, then swapaxes
+        self.ori = nScoresOri[0,:,:,:]
+        self.ori = np.swapaxes(self.ori, 1, 2)
         
+        # For viewing data diff or not OR theo profiles : extract of the first and only score then flip and rotate
+        self.theo_stack = nScoresStack[0, :, :, :]
+        self.theo_stack = np.flip(self.theo_stack, 1)
+        self.theo_stack = np.rot90(self.theo_stack, k=1, axes=(2, 1))
+        
+        self.stack_mod = Treatment_theo_prof[0, :, :, :]
+        self.stack_mod = np.flip(self.stack_mod, 1)
+        self.stack_mod = np.rot90(self.stack_mod, k=1, axes=(2, 1))
+        
+        self.expStack_mod = testArrayList
+        self.expStack_mod = np.flip(self.expStack_mod, 1)
+        self.expStack_mod = np.rot90(self.expStack_mod, k=1, axes=(2, 1))
+       
         # Display of IPF map 
-        self.IPF_map = IPF_computation.Display_IPF_GUI(self.CIFpath[0], self.nScoresOri, IPF_view='Z')
+        self.IPF_map = self.IPF_final_Z
         self.IPF_map = np.flip(self.IPF_map,1)
         self.IPF_map = np.rot90(self.IPF_map)
         
-        self.displayIPFmap(self.IPF_map)
-               
-        # Creation of self.indexation.xxx to be as the run_i dexation approach
-        
-        self.nPhases = 1
-        
-        FakeIndexation = SimpleNamespace()
-        self.indexation =  [FakeIndexation]
-        
-        self.indexation[0].nScoresDist = self.nScoresDist
-        self.indexation[0].CIF = self.CIFpath[0]
-        self.indexation[0].nScoresOri = self.nScoresOri
-        self.indexation[0].nScoresStack = self.nScoresStack
-        self.indexation[0].rawImage = self.rawImage
-        self.indexation[0].Treatment_theo_prof = self.Treatment_theo_prof
-        self.indexation[0].quality_final = self.quality_map
-        self.indexation[0].testArrayList = self.testArrayList
-        
-        
+        self.displayIPFmap(self.IPF_map) 
         
     def labelIndex(self):
         # Search for the labeled map or ask to import it
@@ -526,6 +523,7 @@ class MainWindow(uiclass, baseclass):
             width = self.Current_stack.shape[1]
             height = self.Current_stack.shape[2]
        
+        print("lenProf : ", lenProf, "height : ", height, "  width : ", width)
         self.rawImage = np.zeros((lenProf, height, width))
         self.quality_final = np.zeros((height, width))
         self.ori_f = np.zeros((4, height, width))
@@ -535,7 +533,15 @@ class MainWindow(uiclass, baseclass):
         self.expStack_mod = np.zeros((lenProf, height, width))
         
         listCIF = []
-        for p, val in enumerate(self.preInd.listToIndex):
+        
+        try:
+            toIndex = self.preInd.listToIndex
+        except:
+            toIndex = self.listToIndex
+        
+        
+        # for p, val in enumerate(self.preInd.listToIndex):
+        for p, val in enumerate(toIndex):
             if val:
                 listCIF.append(self.indexation[p].CIF)
                 
@@ -551,7 +557,10 @@ class MainWindow(uiclass, baseclass):
                         if self.cluster:
                             diffIm = self.indexation[p].testArrayList
                         else:
-                            diffIm = self.indexation[p].diffImage2D.reshape((lenProf, height, width))
+                            if not self.reloadH5:
+                                diffIm = self.indexation[p].diffImage2D.reshape((lenProf, height, width))
+                            else:
+                                diffIm = self.indexation[p].rawImage
                         
                     self.rawImage[:, c[0], c[1]] = self.indexation[p].rawImage[:, x, y]
                     self.quality_final[c[0], c[1]] = self.indexation[p].quality_map[x, y]
@@ -559,12 +568,20 @@ class MainWindow(uiclass, baseclass):
                     self.dist[0, c[0], c[1]] = self.indexation[p].nScoresDist[0, x, y]
                     self.theo_stack[:, c[0], c[1]] = self.indexation[p].nScoresStack[0, :, x, y]
                     self.stack_mod[:, c[0], c[1]] = self.indexation[p].Treatment_theo_prof[0, :, x, y]
-                    self.expStack_mod[:, c[0], c[1]] = diffIm[:, x, y]
+                    
+                    if not self.reloadH5:
+                        self.expStack_mod[:, c[0], c[1]] = diffIm[:, x, y]
+                    else:
+                        self.expStack_mod[:, c[0], c[1]] = self.indexation[p].rawImage[:, x, y]
                      
                 
-        self.IPF_final_X = IPF_computation.Display_IPF_GUI(listCIF, self.ori_f, self.listCoordPhases, self.preInd.listToIndex, 'X')
-        self.IPF_final_Y = IPF_computation.Display_IPF_GUI(listCIF, self.ori_f, self.listCoordPhases, self.preInd.listToIndex, 'Y')
-        self.IPF_final_Z = IPF_computation.Display_IPF_GUI(listCIF, self.ori_f, self.listCoordPhases, self.preInd.listToIndex, 'Z')
+        # self.IPF_final_X = IPF_computation.Display_IPF_GUI(listCIF, self.ori_f, self.listCoordPhases, self.preInd.listToIndex, 'X')
+        # self.IPF_final_Y = IPF_computation.Display_IPF_GUI(listCIF, self.ori_f, self.listCoordPhases, self.preInd.listToIndex, 'Y')
+        # self.IPF_final_Z = IPF_computation.Display_IPF_GUI(listCIF, self.ori_f, self.listCoordPhases, self.preInd.listToIndex, 'Z')
+        
+        self.IPF_final_X = IPF_computation.Display_IPF_GUI(listCIF, self.ori_f, self.listCoordPhases, toIndex, 'X')
+        self.IPF_final_Y = IPF_computation.Display_IPF_GUI(listCIF, self.ori_f, self.listCoordPhases, toIndex, 'Y')
+        self.IPF_final_Z = IPF_computation.Display_IPF_GUI(listCIF, self.ori_f, self.listCoordPhases, toIndex, 'Z')
                 
             
     def Run_indexation(self):
@@ -792,7 +809,11 @@ class MainWindow(uiclass, baseclass):
         r_o = int(ROIcoords[0, 0])
         c_o = int(ROIcoords[1, 0])
         phase_o = int(self.phase_map[r_o, c_o])
-        SymQ = self.preInd.SymQ[phase_o]
+        
+        try:
+            SymQ = self.preInd.SymQ[phase_o]
+        except:
+            SymQ = self.SymQ
         
         for i in range(profileLength):
             r = int(ROIcoords[0, i])
