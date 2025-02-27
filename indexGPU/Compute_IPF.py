@@ -55,9 +55,11 @@ def Display_IPF_GUI(CIFpath, quats, listCoord,  listToIndex, IPF_view):
         name = crys["_chemical_formula_sum"]
         if name in PhaseName:
             PhaseName.append(name + "_" + str(i))
+        else:
+            PhaseName.append(name)
         numSG.append(crys["_space_group_IT_number"])
         PG.append(symmetry.get_point_group(int(numSG[i]), True).name)
-    
+
     if IPF_view == "X":
         IPFim, xmap = IPF_Z_GUI(quats, PhaseName, PG, phase, listCoord, listToIndex, Ipf_dir = Vector3d.xvector())
     elif IPF_view == "Y":
@@ -98,7 +100,7 @@ def IPF_Z_GUI(simple_quats, PhaseName, PG, phase, listCoord, listToIndex, Ipf_di
             k += 1
       
     #Creation of the elements necessary to instance a CrystalMap        
-    phase_id = page[:, 0]     # array storing phase corresponding the quaternion 
+    phase_id = page[:, 0]     # array storing phase corresponding to the quaternion 
     y = page[:, 2]            # array storing Y position corresponding the quaternion
     x = page[:, 1]            # array storing X position corresponding the quaternion
     quats = page[:, 3:]       # array storing quaternions along a row
@@ -149,6 +151,7 @@ def IPF_Z_GUI(simple_quats, PhaseName, PG, phase, listCoord, listToIndex, Ipf_di
     p = 0
     for ph, val in enumerate(listToIndex):
         if val:
+            print("p : ", p)
             for col in rgb_i[p]:
                 rgb[int(x[i]), int(y[i]), :] = col
                 i += 1
