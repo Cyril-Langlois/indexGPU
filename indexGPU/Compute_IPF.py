@@ -52,7 +52,9 @@ def Display_IPF_GUI(CIFpath, quats, listCoord,  listToIndex, IPF_view):
         phase.append(diffpy.structure.loadStructure(CIFpath[i]))
     
         crys = da.functions_crystallography.readcif(CIFpath[i])
-        PhaseName.append(crys["_chemical_formula_sum"])
+        name = crys["_chemical_formula_sum"]
+        if name in PhaseName:
+            PhaseName.append(name + "_" + str(i))
         numSG.append(crys["_space_group_IT_number"])
         PG.append(symmetry.get_point_group(int(numSG[i]), True).name)
     
