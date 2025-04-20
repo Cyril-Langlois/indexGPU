@@ -1219,3 +1219,20 @@ class MainWindow(uiclass, baseclass):
         
         view = self.PhaseMap.getView()
         view.setBackgroundColor(self.parent.color1)
+
+
+if __name__ == "__main__":
+    
+    class Colors:
+        def __init__(self):
+            self.color1 = (255, 255, 255) # Background color of imageView
+            self.color2 = (255, 255, 255) # Background color of PlotWidget
+            self.color3 = (243, 98, 64)   # PushButton color (for Qsplitter in ImageView)
+            self.color4 = (243, 98, 64, 150) # Color of the line plot number 1
+            self.color5 = (243, 98, 64)   # Color of the line plot number 2 
+            self.color6 = (193, 167, 181,50) # Brush Color for legend in plot
+    
+    color = Colors()
+    
+    gui = MainWindow(color)
+    gui.show()

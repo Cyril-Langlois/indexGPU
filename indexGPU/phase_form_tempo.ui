@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>475</width>
-    <height>735</height>
+    <height>619</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -177,7 +177,7 @@ QGroupBox {
          </property>
          <property name="minimumSize">
           <size>
-           <width>162</width>
+           <width>132</width>
            <height>0</height>
           </size>
          </property>
