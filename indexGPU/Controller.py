@@ -135,7 +135,7 @@ class Controller:
         # If no Grain Boundaries, labels start at 1, else at 0
         # Creation of a new not indexed phase corresponding to GB
         # Creation of a phase map for this new phase
-        if  self.cluster and 0 in self.labels:
+        if  self.model.cluster and 0 in self.labels:
             self.model.nPhases += 1
             self.model.preInd.listToIndex.append(False)
             qual = np.zeros((qualityShape[1], qualityShape[2])) #Creation of a fictive quality map for this new phase
@@ -219,11 +219,14 @@ class Controller:
                     self.dist[0, c[0], c[1]] = self.indexation[p].nScoresDist[0, x, y]
                     self.theo_stack[:, c[0], c[1]] = self.indexation[p].nScoresStack[0, :, x, y]
                     self.theoStack_mod[:, c[0], c[1]] = self.indexation[p].Treatment_theo_prof[0, :, x, y]
+                    self.expStack_mod[:, c[0], c[1]] = self.indexation[p].testArrayList[:, x, y]
                     
-                    if not self.reloadH5:
-                        self.expStack_mod[:, c[0], c[1]] = diffIm[:, x, y]
-                    else:
-                        self.expStack_mod[:, c[0], c[1]] = self.indexation[p].rawImage[:, x, y]
+                    # if not self.reloadH5:
+                    #     self.expStack_mod[:, c[0], c[1]] = diffIm[:, x, y]
+                    # else:
+                    #     self.expStack_mod[:, c[0], c[1]] = self.indexation[p].rawImage[:, x, y]
+                    
+                    # self.expStack_mod[:, c[0], c[1]] = self.indexation[p].rawImage[:, x, y]
         
         self.view.Info_box.ensureCursorVisible()
         self.view.Info_box.insertPlainText("\n \u2022 Quality map has been computed.")
@@ -299,6 +302,13 @@ class Controller:
         self.res.expStack_mod = self.expStack_mod
         self.res.theo_stack = self.theo_stack
         self.res.theoStack_mod = self.theoStack_mod
+        
+        print("all dimensions")
+        print(self.res.rawImage.shape)
+        print(self.res.expStack_mod.shape)
+        print(self.res.theo_stack.shape)
+        print(self.res.theoStack_mod.shape)
+        
         self.res.quality_final = self.quality_final
         self.res.ori_f = self.ori_f
         self.res.dist = self.dist
@@ -310,6 +320,9 @@ class Controller:
         self.res.savePath = self.PathDir
         self.res.stack_path = self.model.StackDir
         self.res.normType = self.normType
+        
+        if self.model.cluster:
+            self.res.labels = self.labels
         
         self.res.savingRes()
         self.view.Info_box.ensureCursorVisible()
@@ -478,6 +491,12 @@ class Controller:
             self.view.Info_box.insertPlainText("\n \u2022 Quality map has been computed")
             QApplication.processEvents()
 
+        print("all dimensions")
+        print(self.res.rawImage.shape)
+        print(self.res.expStack_mod.shape)
+        print(self.res.theo_stack.shape)
+        print(self.res.theoStack_mod.shape)
+
         self.view.displayExpStack(self.res.rawImage)
         self.view.displayQuality(self.res.quality_final) # Display the quality map
         self.view.displayIPFmap(self.res.IPF_final_Z)   
@@ -514,24 +533,23 @@ class Controller:
                 QApplication.processEvents()
                 try :
                     labels = self.parent.Label_image
-                    labels = np.rot90(np.flip(labels, 0), k=1, axes=(0, 1))
                 except:
                     loc, _ = gf.getFilePathDialog("labeled map") 
                     labels = tf.TiffFile(loc[0]).asarray() # Import the label map
                     
                 self.labels = labels
-
                 self.view.Info_box.insertPlainText("\n \u2022 Labeled map loadded.")
                 QApplication.processEvents()
+                
+                self.view.displayExpStack(self.labels)
+
             else: 
                 self.cluster = False
-                 # Display the 3D array
-                print("Current Stack shape after import : ", self.rawImage.shape)
-
+                self.view.displayExpStack(self.rawImage)
         print("traitement loadProfiles traité par Controleur")
         self.height = len(self.rawImage[0, :, 0])
         self.width = len(self.rawImage[0, 0, :])
-        self.view.displayExpStack(self.rawImage)
+
 
     def loadData(self):
         # Open the phase form to create phases and set indexation parameters, CIF, data base...
@@ -777,12 +795,18 @@ class Controller:
                     #     name = self.res.phase_names[p]
                     # else:
                     #     name = "Not indexed"
-                    name = self.res.phase_names[p]
+                    
+                    try:
+                        name = self.res.phase_names[p]
+                    except:
+                        name = self.model.preInd.phaseIndex.list_phase_name[p]
+                    
                     self.view.label_phases.setVisible(True)
                     self.view.label_phases.setText("Phase map: " + name)
                 else:
-                    _, name = os.path.split(self.res.CIF_path[0])
-                    self.view.label_phases.setText("Phase map: " + name)
+                    pass
+                    # _, name = os.path.split(self.res.CIF_path[0])
+                    # self.view.label_phases.setText("Phase map: " + name)
 
     
     def mouseClick(self, e):
