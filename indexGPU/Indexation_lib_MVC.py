@@ -177,12 +177,10 @@ class IndexationGPUderiv:
         self.postIndexation()
         
         self.quality_map_computation()
+             
+        # self.savingMTEX()
         
-        self.savingRes()
-        
-        self.savingMTEX()
-        
-        self.savingATEX()
+        # self.savingATEX()
 
     def dataPrepDiff(self):
         
@@ -474,39 +472,7 @@ class IndexationGPUderiv:
         
         return batch-i, height*width/(batch-i)
 
-    def savingRes(self):
-        ti = time.strftime("%Y-%m-%d__%Hh-%Mm-%Ss")
-        
-        indexSTACK = h5py.File(self.savePath + '\indexScores_'+ ti + '.hdf5', 'a')
-        
-        group = indexSTACK.create_group('indexation')
-        group.create_dataset(name='nScoresStack', data=self.nScoresStack)
-        group.create_dataset(name='Treatment_theo_prof', data=self.Treatment_theo_prof) #Profil théo modifiés
-        group.create_dataset(name='rawImage', data=self.rawImage)
-        group.create_dataset(name='nScoresDist', data=self.nScoresDist)
-        group.create_dataset(name='nScoresOri', data=self.nScoresOri)
-        group.create_dataset(name='Ref_Pr_list3', data=self.Ref_Pr_list2)
-        group.create_dataset(name='testArrayList', data=self.testArrayList) #Profil expé modifiés
-        group.create_dataset(name='quality_map', data=self.quality_map) #Profil expé modifiés
-                 
-        group.attrs.create("profile length", self.actualProfLength)
-        group.attrs.create("dbChunks", self.dbChunks)
-        group.attrs.create("height", self.height)
-        group.attrs.create("width", self.width)
-        group.attrs.create("CIF path", self.CIF)
-        group.attrs.create("stack path", self.savePath)
-        group.attrs.create("database path", self.DB)
-        group.attrs.create("normalization before indexation", self.normType)
-        group.attrs.create("metric for Indexation", "cosine")
-        group.attrs.create("nbSTACK", self.nbSTACK)
-        group.attrs.create("nbDB", self.nbDB)
-        
-        indexSTACK.flush()
-        indexSTACK.close()
 
-        self.parent.Info_box.ensureCursorVisible()
-        self.parent.Info_box.insertPlainText("\n \u2022 H5 file saved.")
-        QApplication.processEvents()
 
     def savingMTEX(self):
         

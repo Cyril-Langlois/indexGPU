@@ -51,6 +51,7 @@ class phaseForm(uiclass, baseclass):
         self.label_title_.setText(f"Phase n°: {self.page + 1} / {self.nbPhase} ")
         self.gB_otsu.setVisible(False) #gB otsu non visible par défaut
         self.gB_SG.setVisible(False) #Savgol non visible par défaut
+        self.adjustSize()
         
         #Single or multiphase
         if self.nbPhase == 1 :
@@ -72,6 +73,7 @@ class phaseForm(uiclass, baseclass):
             self.LabelsSeries.ui.menuBtn.hide()
             if self.nbPhase > 1 : 
                 self.next_button.setEnabled(False)
+            self.adjustSize()
 
 
         #CONNEXIONS
@@ -107,7 +109,7 @@ class phaseForm(uiclass, baseclass):
         
     def setPhaseName(self):
         crys = da.functions_crystallography.readcif(self.list_CIF[self.page])
-        self.list_phase_name[self.page] = crys["_chemical_formula_sum"]
+        self.list_phase_name[self.page] = crys["_chemical_formula_sum"] + "  " + crys["_space_group_IT_number"]
         
     def importLabel(self): 
         # Loads the otsu map
@@ -130,6 +132,7 @@ class phaseForm(uiclass, baseclass):
             self.save_button.setEnabled(True)
         else :
             self.next_button.setEnabled(True)
+        self.adjustSize()
         
     def otsuListCreation (self):
         # Checks if the entered ostu matches with the given number of phases
@@ -158,6 +161,7 @@ class phaseForm(uiclass, baseclass):
             self.gB_DB.setVisible(False)
             self.gB_workflow.setVisible(False)
             self.list_toIndex[self.page] = False          
+        self.adjustSize()
     
     def SpinBox_changed(self):
         sender = self.sender()
@@ -210,6 +214,7 @@ class phaseForm(uiclass, baseclass):
         if self.otsu :
             self.displaylabels(self.thresholded_maps[self.page])
             self.indexQuestion.setChecked(self.list_toIndex[self.page])
+        self.adjustSize()
              
     def nextPage (self):
         self.page += 1
@@ -232,6 +237,7 @@ class phaseForm(uiclass, baseclass):
         if self.otsu :
             self.displaylabels(self.thresholded_maps[self.page])
             self.indexQuestion.setChecked(self.list_toIndex[self.page])
+        self.adjustSize()
         
     def saveClicked (self):
         # Checks if the user has entered all the values

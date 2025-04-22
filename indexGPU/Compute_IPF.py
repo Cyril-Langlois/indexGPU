@@ -31,8 +31,6 @@ from inichord import General_Functions as gf
 root = tk.Tk()       # initialisation du dialogue
 root.withdraw()
 
-print('hey')
-
 #%% fonctions
 
 def Display_IPF_GUI(CIFpath, quats, listCoord,  listToIndex, IPF_view):
@@ -151,7 +149,6 @@ def IPF_Z_GUI(simple_quats, PhaseName, PG, phase, listCoord, listToIndex, Ipf_di
     p = 0
     for ph, val in enumerate(listToIndex):
         if val:
-            print("p : ", p)
             for col in rgb_i[p]:
                 rgb[int(x[i]), int(y[i]), :] = col
                 i += 1

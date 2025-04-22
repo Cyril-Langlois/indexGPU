@@ -121,166 +121,6 @@ class MainWindow(uiclass, baseclass):
         
         msg.exec_() # Display the message box
         
-    def Reload_data(self): # Reload the H5 file - 2025_02_26
-    
-        # If a quality_map already exists, delete it
-        try:
-            del(self.quality_map)
-        except:
-            pass
-    
-        self.reloadH5 = True #a flag to select which operation to do to be specific to the reload situation
-        self.Info_box.clear() # Clear the information box
-        self.flag_folder = 0
-        
-        # Locate indexation file *.h5
-        self.StackLoc, self.StackDir = gf.getFilePathDialog("Indexation result (*.hdf5)") # Ask for the H5 result file
-    
-        f = h5py.File(self.StackLoc[0], 'r') # In order to read the H5 file
-        listKeys = gf.get_dataset_keys(f) # Extract the listKeys of the H5 files
-        
-        # load data from the h5 file        
-        for i in listKeys:
-            if "meanDisO" in i: # Extract meanDisO
-                meanDisO = np.asarray(f[i])
-            elif "nScoresDisO" in i: # Extract nScoresDisO
-                nScoresDisO = np.asarray(f[i])
-            elif "nScoresDist" in i: # Extract the distance
-                nScoresDist = np.asarray(f[i])
-            elif "nScoresStack" in i: # Extract the theoretical stack
-                nScoresStack = np.asarray(f[i])
-            elif "nScoresOri" in i: # Extract the quaternions
-                nScoresOri = np.asarray(f[i])
-            elif "rawImage" in i: # Extract the experimental stack
-                rawImage = np.asarray(f[i])
-            elif "Treatment_theo_prof" in i: # Extract the theoretical stack in it modified shape
-                Treatment_theo_prof = np.asarray(f[i])
-            elif "testArrayList" in i: # Extract the experimental stack in it modified shape
-                testArrayList = np.asarray(f[i])
-            elif "quality_map" in i: # Extract the quality map
-                quality_map = np.asarray(f[i])
-        
-        try: # Try to open testArrayList (modified exp profiles). In case of it doesn't exist, it become the raw stack 
-            testArrayList = testArrayList.reshape((len(testArrayList),len(rawImage[0]),len(rawImage[0][0])))
-        except:
-            testArrayList = rawImage
-            
-        try: # Try to open Treatment_theo_prof (modified theo profiles). In case of it doesn't exist, it become the theoretical stack 
-            Treatment_theo_prof =Treatment_theo_prof.reshape((len(Treatment_theo_prof),len(Treatment_theo_prof[0]),len(rawImage[0]),len(rawImage[0][0])))
-        except:
-            Treatment_theo_prof = nScoresStack
-        
-        self.Info_box.ensureCursorVisible()
-        self.Info_box.insertPlainText("\n \u2022 Data have been loaded.")
-        QApplication.processEvents()
-        
-        # Crystal information (single phase only) in the H5 file
-        self.CIFpath = []
-        self.nPhases = 1
-
-        for h in range(self.nPhases):
-            listKeys = gf.get_group_keys(f) # Extract ListKeys in order to determine the path of the CIF location
-            for i in listKeys:
-                if "indexation" in i:
-                    for k in f[i].attrs.keys():
-                        if "CIF path" in k:
-                            self.CIFpath.append(f[i].attrs[k])
-
-        try: # Try to use this path to extract the wanted data
-            self.SymQ = sy.get_proper_quaternions_from_CIF(self.CIFpath[0])
-            
-        except: # If the location is unreachable, then it is mandatory to search manually
-            self.popup_message("Indexation","Please import the CIF file",'icons/Indexation_icon.png')
-            self.CIFpath[0] = filedialog.askopenfilename(title='fichier CIF', multiple=True)[0]
-            self.SymQ = sy.get_proper_quaternions_from_CIF(self.CIFpath[0])
-
-        self.Info_box.ensureCursorVisible()
-        self.Info_box.insertPlainText("\n \u2022 CIF file has been loaded.")
-        QApplication.processEvents()
-
-        # Create self.Current_stack with flip and rotation
-        self.Current_stack = rawImage # Extract the stack of images
-        self.Current_stack = np.flip(self.Current_stack, 1) # Flip the array
-        self.Current_stack = np.rot90(self.Current_stack, k=1, axes=(2, 1)) # Rotate the array
-        self.displayExpStack(self.Current_stack) # Display the 3D array
-
-        self.slice_nbr = len(self.Current_stack) # Nbr of slice in the stack
-        self.wind_NCC = int(np.round(0.1*self.slice_nbr)) # 1/10 of the total length 
-
-        # Computation of quality map
-        try : 
-            self.quality_final = self.quality_map 
-            
-            self.quality_final = np.flip(self.quality_final, 0) # Flip the array
-            self.quality_final = np.rot90(self.quality_final, k=1, axes=(1, 0)) # Rotate the array
-
-        except :    
-            self.progressBar.setVisible(True) # The progress bar is shown for clarity
-            self.qualmap = self.NCC_computation(nScoresStack[0,:,:,:],rawImage, batchsize = 5000, Windows = self.wind_NCC)
-    
-            self.quality_map = self.qualmap *100 # X100 to display in %
-            self.quality_final = self.quality_map  
-            
-            self.quality_final = np.flip(self.quality_final, 0) # Flip the array
-            self.quality_final = np.rot90(self.quality_final, k=1, axes=(1, 0)) # Rotate the array
-            
-            self.Info_box.ensureCursorVisible()
-            self.Info_box.insertPlainText("\n \u2022 Quality map has been computed.")
-            QApplication.processEvents()
-            self.progressBar.setVisible(False) # The progress bar is hidden for clarity
-        
-        self.displayQuality(self.quality_final) # Display the quality map
-
-        self.Info_box.ensureCursorVisible()
-        self.Info_box.insertPlainText("\n \u2022 Computation of IPF maps in progress.")
-        QApplication.processEvents()
-
-        # Creation of self.indexation.xxx to be as the run_indexation approach
-        FakeIndexation = SimpleNamespace()
-        self.indexation =  [FakeIndexation]
-
-        self.indexation[0].nScoresDist = nScoresDist
-        self.indexation[0].CIF = self.CIFpath[0]
-        self.indexation[0].nScoresOri = nScoresOri
-        self.indexation[0].nScoresStack = nScoresStack
-        self.indexation[0].rawImage = rawImage
-        self.indexation[0].Treatment_theo_prof = Treatment_theo_prof
-        self.indexation[0].quality_final = self.quality_map
-        self.indexation[0].quality_map = self.quality_map
-        self.indexation[0].testArrayList = testArrayList
-
-        # run phase_discrimination to compute appropriate data to mimick a pixel indexation
-        self.listToIndex = [True]
-        self.phase_discrimination()
-
-        # Flip and rotate self.nScoresDist to be homogenenous (for computation)
-        self.nScoresDist = nScoresDist
-        self.nScoresDist = np.flip(self.nScoresDist, 1)
-        self.nScoresDist = np.rot90(self.nScoresDist, k=1, axes=(2, 1))
-                   
-        # Keep the first and only score, then swapaxes
-        self.ori = nScoresOri[0,:,:,:]
-        self.ori = np.swapaxes(self.ori, 1, 2)
-        
-        # For viewing data diff or not OR theo profiles : extract of the first and only score then flip and rotate
-        self.theo_stack = nScoresStack[0, :, :, :]
-        self.theo_stack = np.flip(self.theo_stack, 1)
-        self.theo_stack = np.rot90(self.theo_stack, k=1, axes=(2, 1))
-        
-        self.stack_mod = Treatment_theo_prof[0, :, :, :]
-        self.stack_mod = np.flip(self.stack_mod, 1)
-        self.stack_mod = np.rot90(self.stack_mod, k=1, axes=(2, 1))
-        
-        self.expStack_mod = testArrayList
-        self.expStack_mod = np.flip(self.expStack_mod, 1)
-        self.expStack_mod = np.rot90(self.expStack_mod, k=1, axes=(2, 1))
-       
-        # Display of IPF map 
-        self.IPF_map = self.IPF_final_Z
-        self.IPF_map = np.flip(self.IPF_map,1)
-        self.IPF_map = np.rot90(self.IPF_map)
-        
-        self.displayIPFmap(self.IPF_map) 
         
     def savingRes_cluster(self):
         ti = time.strftime("%Y-%m-%d__%Hh-%Mm-%Ss")
@@ -373,63 +213,6 @@ class MainWindow(uiclass, baseclass):
         self.Plot_misorientation.getPlotItem().hideAxis('left')
 
 
-        
-    def drawqual(self): # Display of distances
-        try:
-            self.Plot_distance.clear()           
-                      
-            pen = pg.mkPen(color=self.parent.color4, width=5) # Color and line width of the profile
-            self.Plot_distance.plot(self.qualValue, pen=pen) # Plot of the profile
-            
-            styles = {"color": "black", "font-size": "15px", "font-family": "Noto Sans Cond"} # Style for labels
-            
-            self.Plot_distance.setLabel("left", "Quality (%)", **styles) # Import style for Y label
-            
-            font=QtGui.QFont('Noto Sans Cond', 9) # Font definition of the plot
-            
-            self.Plot_distance.getAxis("left").setTickFont(font) # Apply size of the ticks label
-            self.Plot_distance.getAxis("left").setStyle(tickTextOffset = 10) # Apply a slight offset
-
-            self.Plot_distance.getAxis("bottom").setTickFont(font) # Apply size of the ticks label
-            self.Plot_distance.getAxis("bottom").setStyle(tickTextOffset = 10) # Apply a slight offset
-            
-            self.Plot_distance.getAxis('left').setTextPen('k') # Set the axis in black
-            self.Plot_distance.getAxis('bottom').setTextPen('k') # Set the axis in black
-            
-            self.Plot_distance.setBackground(self.parent.color2)
-            self.Plot_distance.showGrid(x=True, y=True)
-            
-        except:
-            pass
-
-    def drawMisO(self): # Display of misorientations
-        try:
-            self.Plot_misorientation.clear()           
-                      
-            pen = pg.mkPen(color=self.parent.color4, width=5) # Color and line width of the profile
-            self.Plot_misorientation.plot(self.disOvalues, pen=pen) # Plot of the profile
-            
-            styles = {"color": "black", "font-size": "15px", "font-family": "Noto Sans Cond"} # Style for labels
-            
-            self.Plot_misorientation.setLabel("left", "Misorientation (°)", **styles) # Import style for Y label
-            
-            font=QtGui.QFont('Noto Sans Cond', 9) # Font definition of the plot
-            
-            self.Plot_misorientation.getAxis("left").setTickFont(font) # Apply size of the ticks label
-            self.Plot_misorientation.getAxis("left").setStyle(tickTextOffset = 10) # Apply a slight offset
-
-            self.Plot_misorientation.getAxis("bottom").setTickFont(font) # Apply size of the ticks label
-            self.Plot_misorientation.getAxis("bottom").setStyle(tickTextOffset = 10) # Apply a slight offset
-            
-            self.Plot_misorientation.getAxis('left').setTextPen('k') # Set the axis in black
-            self.Plot_misorientation.getAxis('bottom').setTextPen('k') # Set the axis in black
-            
-            self.Plot_misorientation.setBackground(self.parent.color2)
-            self.Plot_misorientation.showGrid(x=True, y=True)
-            
-        except:
-            pass
-
     def displayExpStack(self, exp_stack):
         
         # on place ici le flip-rot car ce n'est que de l'affichage
@@ -500,7 +283,7 @@ class MainWindow(uiclass, baseclass):
         histplot.fillHistogram(color = self.parent.color5)        
         histplot.autoHistogramRange()
         
-        self.QualSeries.setColorMap(pg.colormap.get('CET-I3'))
+        self.QualSeries.setColorMap(pg.colormap.get('inferno'))
         
     def displayIPFmap(self, IPF):
         self.IPF_serie.addItem(self.crosshair_v3, ignoreBounds=True)
@@ -518,7 +301,8 @@ class MainWindow(uiclass, baseclass):
         self.IPF_serie.autoRange()
         
     def displayPhaseMap(self, phase_map):
-        
+
+        self.PhaseMap.setVisible(True) # Hide phase map
         phase_map = np.flip(phase_map, 1)
         phase_map = np.rot90(phase_map, k=1, axes=(0,1))
         
