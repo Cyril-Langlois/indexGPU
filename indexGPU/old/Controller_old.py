@@ -208,10 +208,10 @@ class Controller:
                         if self.model.cluster:
                             diffIm = self.indexation[p].testArrayList
                         else:
-                            if not self.reloadH5:
-                                diffIm = self.indexation[p].diffImage2D.reshape((lenProf, height, width))
-                            else:
-                                diffIm = self.indexation[p].rawImage
+                            # if not self.reloadH5:
+                            #     diffIm = self.indexation[p].diffImage2D.reshape((lenProf, height, width))
+                            # else:
+                            diffIm = self.indexation[p].rawImage
                         
                     self.rawImage[:, c[0], c[1]] = self.indexation[p].rawImage[:, x, y]
                     self.quality_final[c[0], c[1]] = self.indexation[p].quality_map[x, y]
@@ -303,12 +303,6 @@ class Controller:
         self.res.theo_stack = self.theo_stack
         self.res.theoStack_mod = self.theoStack_mod
         
-        print("all dimensions")
-        print(self.res.rawImage.shape)
-        print(self.res.expStack_mod.shape)
-        print(self.res.theo_stack.shape)
-        print(self.res.theoStack_mod.shape)
-        
         self.res.quality_final = self.quality_final
         self.res.ori_f = self.ori_f
         self.res.dist = self.dist
@@ -316,6 +310,8 @@ class Controller:
         self.res.IPF_final_X = self.IPF_final_X
         self.res.IPF_final_Y = self.IPF_final_Y
         self.res.IPF_final_Z = self.IPF_final_Z
+        
+        self.res.phase_names = self.model.preInd.phaseIndex.list_phase_name
         
         self.res.savePath = self.PathDir
         self.res.stack_path = self.model.StackDir
@@ -490,12 +486,6 @@ class Controller:
             self.view.Info_box.ensureCursorVisible()
             self.view.Info_box.insertPlainText("\n \u2022 Quality map has been computed")
             QApplication.processEvents()
-
-        print("all dimensions")
-        print(self.res.rawImage.shape)
-        print(self.res.expStack_mod.shape)
-        print(self.res.theo_stack.shape)
-        print(self.res.theoStack_mod.shape)
 
         self.view.displayExpStack(self.res.rawImage)
         self.view.displayQuality(self.res.quality_final) # Display the quality map
@@ -788,25 +778,38 @@ class Controller:
                 self.drawCHORDprofiles()
 
                 self.view.label_Quality.setText("Quality index: " + str(np.round(self.res.quality_final[self.y, self.x],1)) + "%")
-                if self.model.nPhases > 1:
-                    p = int(self.res.phase_map[self.y, self.x])
+                
+                self.view.label_phases.setVisible(True)
+                p = int(self.res.phase_map[self.y, self.x])
+                name = self.res.phase_names[p]
+                self.view.label_phases.setText("Phase map: " + name)
+                # name = "not entered"
+                # try:
+                #     name = self.res.phase_names[0]
+                # except:
+                #     name = self.model.preInd.phaseIndex.list_phase_name[0]
+                         
+                
+                
+                # if self.model.nPhases > 1:
+                    # p = int(self.res.phase_map[self.y, self.x])
                     # if self.model.preInd.listToIndex[p]:
                     #     # name = self.model.preInd.phaseList[p].name
                     #     name = self.res.phase_names[p]
                     # else:
                     #     name = "Not indexed"
                     
-                    try:
-                        name = self.res.phase_names[p]
-                    except:
-                        name = self.model.preInd.phaseIndex.list_phase_name[p]
+                #     try:
+                #         name = self.res.phase_names[p]
+                #     except:
+                #         name = self.model.preInd.phaseIndex.list_phase_name[p]
                     
-                    self.view.label_phases.setVisible(True)
-                    self.view.label_phases.setText("Phase map: " + name)
-                else:
-                    pass
-                    # _, name = os.path.split(self.res.CIF_path[0])
-                    # self.view.label_phases.setText("Phase map: " + name)
+                #     self.view.label_phases.setVisible(True)
+                #     self.view.label_phases.setText("Phase map: " + name)
+                # else:
+                #     pass
+                #     # _, name = os.path.split(self.res.CIF_path[0])
+                #     # self.view.label_phases.setText("Phase map: " + name)
 
     
     def mouseClick(self, e):

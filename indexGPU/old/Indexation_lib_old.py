@@ -177,10 +177,12 @@ class IndexationGPUderiv:
         self.postIndexation()
         
         self.quality_map_computation()
-             
-        # self.savingMTEX()
         
-        # self.savingATEX()
+        self.savingRes()
+        
+        self.savingMTEX()
+        
+        self.savingATEX()
 
     def dataPrepDiff(self):
         
@@ -418,7 +420,7 @@ class IndexationGPUderiv:
         
         self.quality_map = self.qualmap *100 # X100 to display in %
 
-    def NCC_computation(self, Theo_stack, rawImage, batchsize = 5000, Windows = 18): # Normalized covariance correlation calculation
+    def NCC_computation(self,Theo_stack,rawImage, batchsize = 5000, Windows = 18): # Normalized covariance correlation calculation
         var,batch_nbr = self.find_batch_nbr(len(Theo_stack[0]),len(Theo_stack[0][0]),batchsize) # Find optimal batch for cupy uses
         
         self.prgbar = 0 # Progress bar initial value
@@ -472,7 +474,39 @@ class IndexationGPUderiv:
         
         return batch-i, height*width/(batch-i)
 
+    def savingRes(self):
+        ti = time.strftime("%Y-%m-%d__%Hh-%Mm-%Ss")
+        
+        indexSTACK = h5py.File(self.savePath + '\indexScores_'+ ti + '.hdf5', 'a')
+        
+        group = indexSTACK.create_group('indexation')
+        group.create_dataset(name='nScoresStack', data=self.nScoresStack)
+        group.create_dataset(name='Treatment_theo_prof', data=self.Treatment_theo_prof) #Profil théo modifiés
+        group.create_dataset(name='rawImage', data=self.rawImage)
+        group.create_dataset(name='nScoresDist', data=self.nScoresDist)
+        group.create_dataset(name='nScoresOri', data=self.nScoresOri)
+        group.create_dataset(name='Ref_Pr_list3', data=self.Ref_Pr_list2)
+        group.create_dataset(name='testArrayList', data=self.testArrayList) #Profil expé modifiés
+        group.create_dataset(name='quality_map', data=self.quality_map) #Profil expé modifiés
+                 
+        group.attrs.create("profile length", self.actualProfLength)
+        group.attrs.create("dbChunks", self.dbChunks)
+        group.attrs.create("height", self.height)
+        group.attrs.create("width", self.width)
+        group.attrs.create("CIF path", self.CIF)
+        group.attrs.create("stack path", self.savePath)
+        group.attrs.create("database path", self.DB)
+        group.attrs.create("normalization before indexation", self.normType)
+        group.attrs.create("metric for Indexation", "cosine")
+        group.attrs.create("nbSTACK", self.nbSTACK)
+        group.attrs.create("nbDB", self.nbDB)
+        
+        indexSTACK.flush()
+        indexSTACK.close()
 
+        self.parent.Info_box.ensureCursorVisible()
+        self.parent.Info_box.insertPlainText("\n \u2022 H5 file saved.")
+        QApplication.processEvents()
 
     def savingMTEX(self):
         
@@ -561,3 +595,47 @@ class phaseObject:
             Op = ['Diff', self.diff]
         self.Workflow = [Op]
         
+class preIndexation:
+    """
+    Classe permettant d'entrer en mémoire la liste des phases, des phases à indexer
+    et la carte otsu si nécessaire.
+    Les dialogues "utilisateurs" se font au travers de la librairie 
+    "General_functions".
+    
+    Ces infos figurent comme attributs de la classe preIndexation.
+    """
+    def __init__(self, parent):
+        # Icons sizes management for pop-up windows (QMessageBox)
+        self.pixmap = QPixmap("icons/Main_icon.png")
+        self.pixmap = self.pixmap.scaled(100, 100)
+        
+        self.phaseList = []
+        self.SymQ = []
+        self.otsu_map = []
+        self.listToIndex =[]
+        self.DBsizeList = []
+        self.chunksList = []
+        
+        # User interaction to load indexation parameters
+        self.phaseIndex = phaseClass.phaseForm(self, parent.nPhases, parent.otsu)
+        self.phaseIndex.exec_()
+        
+        for i, phase in enumerate(self.phaseList):
+            self.SymQ.append(sy.get_proper_quaternions_from_CIF(phase.CifLoc)) # Get the variable symQ for symmetry of quaternions
+          
+        for i, val in enumerate (self.listToIndex):
+            if val:
+                self.chunksList.append(np.floor(int (self.DBsizeList[i])/250_000))
+                if int(self.DBsizeList[i])%250_000 != 0 :
+                    self.chunksList[i] += 1
+            else :
+                self.chunksList.append(None)           
+        
+        
+    def popup_message(self,title,text,icon):
+        msg = QMessageBox()
+        msg.setIconPixmap(self.pixmap)
+        msg.setWindowTitle(title)
+        msg.setText(text)
+        msg.setWindowIcon(QtGui.QIcon(icon))
+        msg.exec_()

@@ -38,7 +38,7 @@ from pyquaternion import Quaternion
 path2thisFile = abspath(getsourcefile(lambda:0))
 uiclass, baseclass = pg.Qt.loadUiType(os.path.dirname(path2thisFile) + "/Indexation_GUI_tempo2.ui")
 
-class MainWindow(uiclass, baseclass):
+class MainView(uiclass, baseclass):
     def __init__(self, parent):
         super().__init__()
         

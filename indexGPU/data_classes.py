@@ -14,7 +14,7 @@ import h5py
 import time
 
 import phaseGUI_classes_local as phaseClass
-import Indexation_lib_MVC as indGPU
+import Indexation_lib as indGPU
 
 
 from PyQt5.QtWidgets import QApplication, QMessageBox
