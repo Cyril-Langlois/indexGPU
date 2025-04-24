@@ -61,7 +61,6 @@ class Controller:
 
     def creationListProfilesOtsu(self):
         # Sets the phase map to Otsu map, creates a list of list of coordinates and a list of list of profiles
-        
         self.listCoordPhases = []
         self.phase_map = self.model.preInd.otsu_map
 
@@ -72,7 +71,7 @@ class Controller:
            
             groupProfiles = [] # one group for each phase
             for c in coord_phase:
-                groupProfiles.append(self.model.Stack[:, c[1], c[0]])
+                groupProfiles.append(self.model.Stack[:, c[0], c[1]])
             self.profilesRaw.append(groupProfiles)
 
     def labelIndex(self):
@@ -201,17 +200,9 @@ class Controller:
                     if self.model.otsu: # In otsu case, the quality map is an array of shape : (number of pix in phase p, 1)
                         x = i-1
                         y = 0
-                        diffIm = self.indexation[p].diffImage2D.reshape((lenProf, len(self.listCoordPhases[p]), 1))
                     else:         # In normal case, the quality map is an array of shape : (height, width)
                         x = c[0]
                         y = c[1]
-                        if self.model.cluster:
-                            diffIm = self.indexation[p].testArrayList
-                        else:
-                            # if not self.reloadH5:
-                            #     diffIm = self.indexation[p].diffImage2D.reshape((lenProf, height, width))
-                            # else:
-                            diffIm = self.indexation[p].rawImage
                         
                     self.rawImage[:, c[0], c[1]] = self.indexation[p].rawImage[:, x, y]
                     self.quality_final[c[0], c[1]] = self.indexation[p].quality_map[x, y]
@@ -221,13 +212,6 @@ class Controller:
                     self.theoStack_mod[:, c[0], c[1]] = self.indexation[p].Treatment_theo_prof[0, :, x, y]
                     self.expStack_mod[:, c[0], c[1]] = self.indexation[p].testArrayList[:, x, y]
                     
-                    # if not self.reloadH5:
-                    #     self.expStack_mod[:, c[0], c[1]] = diffIm[:, x, y]
-                    # else:
-                    #     self.expStack_mod[:, c[0], c[1]] = self.indexation[p].rawImage[:, x, y]
-                    
-                    # self.expStack_mod[:, c[0], c[1]] = self.indexation[p].rawImage[:, x, y]
-        
         self.view.Info_box.ensureCursorVisible()
         self.view.Info_box.insertPlainText("\n \u2022 Quality map has been computed.")
         QApplication.processEvents()
@@ -772,17 +756,19 @@ class Controller:
             self.y = int(mousePoint.y())
  
             if self.x >= 0 and self.y >= 0 and self.x < self.width and self.y < self.height:
-                self.drawCHORDprofiles()
-
-                self.view.label_Quality.setText("Quality index: " + str(np.round(self.res.quality_final[self.y, self.x],1)) + "%")
-                self.view.label_phases.setVisible(True)
-                if not self.res.legacy:
-                    p = int(self.res.phase_map[self.y, self.x])
-                    name = self.res.phase_names[p]
-                else:
-                    name = "not entered"
-                self.view.label_phases.setText("Phase map: " + name)
-
+                try:
+                    self.drawCHORDprofiles()
+    
+                    self.view.label_Quality.setText("Quality index: " + str(np.round(self.res.quality_final[self.y, self.x],1)) + "%")
+                    self.view.label_phases.setVisible(True)
+                    if not self.res.legacy:
+                        p = int(self.res.phase_map[self.y, self.x])
+                        name = self.res.phase_names[p]
+                    else:
+                        name = "not entered"
+                    self.view.label_phases.setText("Phase map: " + name)
+                except:
+                    pass
     
     def mouseClick(self, e):
         pos = e[0]

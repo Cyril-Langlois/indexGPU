@@ -240,10 +240,13 @@ class Final_Index_res:
         # group.attrs.create("nbSTACK", self.nbSTACK)
         # group.attrs.create("nbDB", self.nbDB)
         
+        i = 0
         for p in self.model.preInd.phaseList:
-            
-            group_p = indexSTACK.create_group(p.name)
-            
+            try:
+                group_p = indexSTACK.create_group(p.name)
+            except:
+                group_p = indexSTACK.create_group(str(i))
+            i += 1
             group_p.attrs.create("CIF path", p.CifLoc)
             group_p.attrs.create("database path", p.DatabaseLoc)
             group_p.attrs.create("database size", p.DB_Size)

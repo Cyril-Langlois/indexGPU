@@ -117,8 +117,8 @@ class phaseForm(uiclass, baseclass):
         options = QFileDialog.Options()
         path, _ = QFileDialog.getOpenFileName(self, f"Select a map :", "", "Tous les fichiers (*.tiff)", options=options)
         
-        self.label_map = tf.TiffFile(path).asarray()
-        self.label_map = np.flip(self.label_map, 0)
+        self.label_map_raw = tf.TiffFile(path).asarray()
+        self.label_map = np.flip(self.label_map_raw, 0)
         self.label_map = np.rot90(self.label_map, k=1, axes=(1, 0))
         self.otsuListCreation()
         self.displaylabels(self.thresholded_maps[0])
@@ -266,6 +266,7 @@ class phaseForm(uiclass, baseclass):
                 phaseO.SG_win = self.list_window[i]
                 phaseO.workflowCreation()
                 phaseO.name = self.list_phase_name[i]
+                print(phaseO.name)
                 
                 #ajout de la phase i dans la liste de phases parente
                 self.parent.phaseList.append(phaseO)
@@ -274,7 +275,7 @@ class phaseForm(uiclass, baseclass):
             self.parent.DBsizeList = self.list_DB_size
 
             if self.otsu:
-                self.parent.otsu_map = self.label_map
+                self.parent.otsu_map = self.label_map_raw
             
             self.close()
     
