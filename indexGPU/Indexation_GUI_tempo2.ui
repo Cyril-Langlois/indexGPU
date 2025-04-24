@@ -242,7 +242,7 @@ QHeaderView::section {
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>117</width>
+                 <width>92</width>
                  <height>0</height>
                 </size>
                </property>
@@ -282,7 +282,7 @@ QHeaderView::section {
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>119</width>
+                 <width>94</width>
                  <height>0</height>
                 </size>
                </property>
@@ -328,7 +328,7 @@ QHeaderView::section {
              </property>
              <property name="minimumSize">
               <size>
-               <width>141</width>
+               <width>116</width>
                <height>0</height>
               </size>
              </property>
@@ -403,7 +403,7 @@ QHeaderView::section {
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>117</width>
+                 <width>92</width>
                  <height>0</height>
                 </size>
                </property>
@@ -443,7 +443,7 @@ QHeaderView::section {
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>119</width>
+                 <width>94</width>
                  <height>0</height>
                 </size>
                </property>
@@ -478,7 +478,7 @@ QHeaderView::section {
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>117</width>
+                 <width>92</width>
                  <height>0</height>
                 </size>
                </property>
@@ -518,7 +518,7 @@ QHeaderView::section {
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>119</width>
+                 <width>94</width>
                  <height>0</height>
                 </size>
                </property>
@@ -553,7 +553,7 @@ QHeaderView::section {
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>117</width>
+                 <width>92</width>
                  <height>0</height>
                 </size>
                </property>
@@ -593,7 +593,7 @@ QHeaderView::section {
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>119</width>
+                 <width>94</width>
                  <height>0</height>
                 </size>
                </property>
@@ -628,7 +628,7 @@ QHeaderView::section {
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>117</width>
+                 <width>92</width>
                  <height>0</height>
                 </size>
                </property>
@@ -668,7 +668,7 @@ QHeaderView::section {
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>119</width>
+                 <width>94</width>
                  <height>0</height>
                 </size>
                </property>
@@ -704,7 +704,7 @@ QHeaderView::section {
           </property>
           <property name="minimumSize">
            <size>
-            <width>141</width>
+            <width>116</width>
             <height>0</height>
            </size>
           </property>
@@ -980,6 +980,16 @@ QHeaderView::section {
              </property>
             </widget>
            </item>
+           <item>
+            <widget class="QTextEdit" name="quat_textEdit">
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>45</height>
+              </size>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>
@@ -1008,7 +1018,7 @@ QHeaderView::section {
              <widget class="QLabel" name="label_Serie">
               <property name="minimumSize">
                <size>
-                <width>162</width>
+                <width>132</width>
                 <height>0</height>
                </size>
               </property>
@@ -1224,7 +1234,7 @@ QHeaderView::section {
              <widget class="QLabel" name="label_Quality">
               <property name="minimumSize">
                <size>
-                <width>162</width>
+                <width>132</width>
                 <height>0</height>
                </size>
               </property>
@@ -1527,7 +1537,7 @@ QHeaderView::section {
                <widget class="QLabel" name="label_profiles">
                 <property name="minimumSize">
                  <size>
-                  <width>162</width>
+                  <width>132</width>
                   <height>0</height>
                  </size>
                 </property>
@@ -1763,7 +1773,7 @@ QHeaderView::section {
                <widget class="QLabel" name="label_distance">
                 <property name="minimumSize">
                  <size>
-                  <width>162</width>
+                  <width>132</width>
                   <height>0</height>
                  </size>
                 </property>
@@ -1995,7 +2005,7 @@ QHeaderView::section {
                <widget class="QLabel" name="label_misorientation">
                 <property name="minimumSize">
                  <size>
-                  <width>162</width>
+                  <width>132</width>
                   <height>0</height>
                  </size>
                 </property>
@@ -2218,7 +2228,7 @@ QHeaderView::section {
            <widget class="QLabel" name="label_Quality_2">
             <property name="minimumSize">
              <size>
-              <width>162</width>
+              <width>132</width>
               <height>0</height>
              </size>
             </property>
@@ -2474,7 +2484,7 @@ QHeaderView::section {
             </property>
             <property name="minimumSize">
              <size>
-              <width>162</width>
+              <width>132</width>
               <height>0</height>
              </size>
             </property>
@@ -2703,7 +2713,7 @@ QHeaderView::section {
      <x>0</x>
      <y>0</y>
      <width>1445</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

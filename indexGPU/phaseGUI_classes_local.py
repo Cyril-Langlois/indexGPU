@@ -109,7 +109,7 @@ class phaseForm(uiclass, baseclass):
         
     def setPhaseName(self):
         crys = da.functions_crystallography.readcif(self.list_CIF[self.page])
-        self.list_phase_name[self.page] = crys["_chemical_formula_sum"] + "  " + crys["_space_group_IT_number"]
+        self.list_phase_name[self.page] = crys["_chemical_formula_sum"] + "-" + crys["_space_group_IT_number"]
         
     def importLabel(self): 
         # Loads the otsu map

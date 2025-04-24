@@ -40,7 +40,7 @@ class Controller:
         self.view.checkBox_otsu.stateChanged.connect(self.setOtsu)
         self.view.Open_data.clicked.connect(self.loadData) # CIF, database, workflow, otsu if necessary
         self.view.Reload_bttn.clicked.connect(self.reload_data) # Load H5 and CIF if needed
-        self.view.Save_bttn.clicked.connect(self.view.Save_results) # Saving process (processing steps, results, infos)
+        self.view.Save_bttn.clicked.connect(self.Save_results) # Saving process (processing steps, results, infos)
         self.view.Compute_indexation_bttn.clicked.connect(self.Run_indexation) # Run the indexation program
         self.view.OriBox.currentTextChanged.connect(self.Change_IPFView) # Allow different IPF map to be displayed
         
@@ -374,7 +374,6 @@ class Controller:
             i += 1
         return batch-i, height*width/(batch-i)
     
-
     def reload_data(self): # Reload the H5 file - 2025_02_26
     
         # If a quality_map already exists, delete it
@@ -397,10 +396,10 @@ class Controller:
         self.view.lineROI_carto.setVisible(True)
         self.view.label_phases.setVisible(True)
         
-        self.view.lineROI_carto.setVisible(True)
-        
+     
+        self.activate_ROI_plots(True)
         if self.model.nPhases > 1:
-            self.view.lineROI_carto.setVisible(False)
+            self.activate_ROI_plots(False)
         
         self.view.progressBar.setVisible(True) # The progress bar is hidden for clarity
         
@@ -480,7 +479,13 @@ class Controller:
             self.view.PhaseMap.setVisible(False)  
         
         self.view.progressBar.setVisible(False)
-        # self.drawCHORDprofiles()
+
+    def activate_ROI_plots(self, b):
+        self.view.lineROI_carto.setVisible(b)
+        self.view.Plot_distance.setVisible(b)
+        self.view.Plot_misorientation.setVisible(b)
+        self.view.label_distance.setVisible(b)
+        self.view.label_misorientation.setVisible(b)  
 
     def display_final(self):
         
@@ -520,10 +525,8 @@ class Controller:
             else: 
                 self.cluster = False
                 self.view.displayExpStack(self.rawImage)
-        print("traitement loadProfiles traité par Controleur")
         self.height = len(self.rawImage[0, :, 0])
         self.width = len(self.rawImage[0, 0, :])
-
 
     def loadData(self):
         # Open the phase form to create phases and set indexation parameters, CIF, data base...
@@ -591,6 +594,48 @@ class Controller:
         
         self.drawqual()
         self.drawMisO()
+
+    def Save_results(self):
+        
+        IPF_map_X = self.res.IPF_final_X
+        IPF_map_Y = self.res.IPF_final_Y
+        IPF_map_Z = self.res.IPF_final_Z
+        phaseMap = self.res.phase_map
+        quality_map = self.res.quality_final
+        dist = self.res.dist
+        
+        IPF_map_X = (IPF_map_X * 255).astype(np.uint8)
+        IPF_map_Y = (IPF_map_Y * 255).astype(np.uint8)
+        IPF_map_Z = (IPF_map_Z * 255).astype(np.uint8)
+        phaseMap = gf.convertToUint8(phaseMap)
+        quality_map = gf.convertToUint8(quality_map)
+        dist = gf.convertToUint8(1 - dist)
+    
+        # Images saving step
+                
+        # if self.flag_folder == 1:
+        #     directory = self.PathDir
+        # else:
+        #     directory = self.StackDir
+        directory = self.res.savePath
+        # tf.imwrite(directory + '/Quality_map.tiff', np.rot90(np.flip(self.quality_final, 0), k=1, axes=(1, 0)))
+        tf.imwrite(directory + '/Quality_map.tiff', quality_map)
+        tf.imwrite(directory + '/Distance_map.tiff', dist)
+        tf.imwrite(directory + '/IPF_X.tiff', IPF_map_X)
+        tf.imwrite(directory + '/IPF_Y.tiff', IPF_map_Y)
+        tf.imwrite(directory + '/IPF_Z.tiff', IPF_map_Z)
+        if self.model.nPhases > 1:
+            # tf.imwrite(directory + '/Phase_map.tiff', np.rot90(np.flip(phaseMap, 0), k=1, axes=(1,0)))
+            tf.imwrite(directory + '/Phase_map.tiff', phaseMap)
+
+        self.res.savingMTEX()
+
+        self.view.Info_box.ensureCursorVisible()
+        self.view.Info_box.insertPlainText("\n \u2022 MTex file saved.")
+        QApplication.processEvents() 
+            
+        # Finished message
+        self.view.popup_message("indexation[0]","Saving process is over.",'icons/indexation[0]_icon.png')
 
     def Change_IPFView(self):
         self.OriChoice = self.view.OriBox.currentText() # Choice between X-Y-Z
@@ -756,19 +801,22 @@ class Controller:
             self.y = int(mousePoint.y())
  
             if self.x >= 0 and self.y >= 0 and self.x < self.width and self.y < self.height:
+
+                self.drawCHORDprofiles()
                 try:
-                    self.drawCHORDprofiles()
-    
                     self.view.label_Quality.setText("Quality index: " + str(np.round(self.res.quality_final[self.y, self.x],1)) + "%")
-                    self.view.label_phases.setVisible(True)
-                    if not self.res.legacy:
-                        p = int(self.res.phase_map[self.y, self.x])
-                        name = self.res.phase_names[p]
-                    else:
-                        name = "not entered"
-                    self.view.label_phases.setText("Phase map: " + name)
                 except:
-                    pass
+                    self.view.label_Quality.setText("Quality index: not available yet")
+                
+                self.view.label_phases.setVisible(True)
+
+                try:
+                    p = int(self.res.phase_map[self.y, self.x])
+                    name = self.res.phase_names[p]
+                except: 
+                    name = "not available"
+
+                self.view.label_phases.setText("Phase map: " + name)
     
     def mouseClick(self, e):
         pos = e[0]
@@ -817,5 +865,10 @@ class Controller:
             try:
                 if self.x >= 0 and self.y >= 0 and self.x < self.width and self.y < self.height:
                     self.drawCHORDprofiles()
+                    
+                    self.view.quat_textEdit.ensureCursorVisible()
+                    self.view.quat_textEdit.insertPlainText(f"\n \u2022 Quaternion [{self.x}, {self.y}] :\n  {self.res.ori_f[:, self.y, self.x]}")   
+                    self.view.quat_textEdit.ensureCursorVisible()
+                QApplication.processEvents()
             except:
                 pass

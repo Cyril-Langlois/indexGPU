@@ -472,8 +472,6 @@ class IndexationGPUderiv:
         
         return batch-i, height*width/(batch-i)
 
-
-
     def savingMTEX(self):
         
         Quat = self.nScoresOri[-1,:,:,:]

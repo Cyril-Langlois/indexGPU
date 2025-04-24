@@ -160,34 +160,7 @@ class MainView(uiclass, baseclass):
         # self.prgbar = self.ValSlice
         self.progressBar.setValue(self.prgbar)
 
-    def Save_results(self):
-        
-        IPF_map_X = self.IPF_final_X
-        IPF_map_Y = self.IPF_final_Y
-        IPF_map_Z = self.IPF_final_Z
-        phaseMap = self.phase_map
-        
-        IPF_map_X = (IPF_map_X * 255).astype(np.uint8)
-        IPF_map_Y = (IPF_map_Y * 255).astype(np.uint8)
-        IPF_map_Z = (IPF_map_Z * 255).astype(np.uint8)
-        phaseMap = gf.convertToUint8(phaseMap)
-    
-        # Images saving step
-                
-        if self.flag_folder == 1:
-            directory = self.PathDir
-        else:
-            directory = self.StackDir
-        tf.imwrite(directory + '/Quality_map.tiff', np.rot90(np.flip(self.quality_final, 0), k=1, axes=(1, 0)))
-        tf.imwrite(directory + '/Distance_map.tiff',1-self.dist)
-        tf.imwrite(directory + '/IPF_X.tiff', IPF_map_X)
-        tf.imwrite(directory + '/IPF_Y.tiff', IPF_map_Y)
-        tf.imwrite(directory + '/IPF_Z.tiff', IPF_map_Z)
-        if self.nPhases > 1:
-            tf.imwrite(directory + '/Phase_map.tiff', np.rot90(np.flip(phaseMap, 0), k=1, axes=(1,0)))
-            
-        # Finished message
-        self.popup_message("indexation[0]","Saving process is over.",'icons/indexation[0]_icon.png')
+
 
 
     def defaultdrawCHORDprofiles(self): # Default display of CHORDprofiles
