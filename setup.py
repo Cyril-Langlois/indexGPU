@@ -11,7 +11,7 @@ setup(
 		"Dans-Diffraction >=3.2",
 		"pyquaternion >=0.9",
     ],
- 	data_files=[('Lib/site-packages/indexGPU', ['indexGPU/Indexation_GUI.ui']),('Lib/site-packages/indexGPU', ['indexGPU/Indexation_GUI_tempo.ui']),
+ 	data_files=[('Lib/site-packages/indexGPU', ['indexGPU/Indexation_GUI.ui']),('Lib/site-packages/indexGPU', ['indexGPU/Indexation_GUI_tempo2.ui']),
               ('Lib/site-packages/indexGPU', ['indexGPU/phase_form_tempo.ui']),('Lib/site-packages/indexGPU', ['indexGPU/Indexation_lib.py']),
               ('Lib/site-packages/indexGPU', ['indexGPU/phaseGUI_classes.py']),
      ],
