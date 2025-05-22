@@ -24,14 +24,18 @@ from PyQt5 import QtCore, QtGui
 
 from inichord import General_Functions as gf
 import indexGPU.Xallo as xa
-# import indexGPU.Indexation_lib as indGPU
-import Indexation_lib as indGPU
-# from indexGPU import Compute_IPF as IPF_computation
-import Compute_IPF as IPF_computation
 from indexGPU import Symetry as sy
-# from indexGPU import phaseGUI_classes as phaseClass
-# import phaseGUI_classes as phaseClass
+
+#------------------------------import for pypi lib use-------------------------
+import Indexation_lib as indGPU
+import Compute_IPF as IPF_computation
 import phaseGUI_classes_local as phaseClass
+
+#------------------------------import for local dev use------------------------
+# import Indexation_lib as indGPU
+# import Compute_IPF as IPF_computation
+# import phaseGUI_classes_local as phaseClass
+
 
 from pyquaternion import Quaternion
 

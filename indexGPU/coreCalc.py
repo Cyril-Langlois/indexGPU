@@ -13,10 +13,18 @@ from indexGPU import Symetry as sy
 import tifffile as tf
 from PyQt5.QtWidgets import QApplication
 from PyQt5 import QtCore, QtGui
-# import indexGPU.Indexation_lib as indGPU
-import Indexation_lib as indGPU
-from data_classes import Final_Index_res
-import Compute_IPF as IPF_computation
+
+#------------------------------import for pypi lib use-------------------------
+import indexGPU.Indexation_lib as indGPU
+from indexGPU.data_classes import Final_Index_res
+import indexGPU.Compute_IPF as IPF_computation
+
+#------------------------------import for local dev use------------------------
+# import Indexation_lib as indGPU
+# from data_classes import Final_Index_res
+# import Compute_IPF as IPF_computation
+
+
 import time
 from pyquaternion import Quaternion
 import cupy as cp

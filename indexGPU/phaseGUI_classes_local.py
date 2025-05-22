@@ -6,9 +6,12 @@ import pyqtgraph as pg
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLineEdit, QCheckBox, QSpinBox, QGroupBox, QTextEdit, QHBoxLayout, QVBoxLayout, QDialog, QRadioButton, QFileDialog, QLabel, QMessageBox
 from PyQt5.QtCore import Qt, QTimer, QSize
-# from indexGPU import Indexation_lib as il
-# import indexGPU.Indexation_lib as il
-import Indexation_lib as il
+
+#------------------------------import for pypi lib use-------------------------
+import indexGPU.Indexation_lib as il
+
+#------------------------------import for local dev use------------------------
+# import Indexation_lib as il
 
 import numpy as np
 import tifffile as tf

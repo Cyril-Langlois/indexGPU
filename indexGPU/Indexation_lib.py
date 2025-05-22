@@ -6,8 +6,14 @@ Created on Wed Feb  1 20:53:26 2023
 """
 import indexGPU.Xallo as xa
 from indexGPU import Symetry as sy
-# from indexGPU import phaseGUI_classes as phaseClass
-import phaseGUI_classes_local as phaseClass
+
+#------------------------------import for pypi lib use-------------------------
+import indexGPU.phaseGUI_classes_local as phaseClass
+
+#------------------------------import for local dev use------------------------
+# import phaseGUI_classes_local as phaseClass
+
+
 from inichord import Profile_Modification as fct
 from inichord import General_Functions as gf
 from PyQt5.QtWidgets import QApplication
