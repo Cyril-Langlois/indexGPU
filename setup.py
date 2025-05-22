@@ -1,8 +1,10 @@
 from setuptools import setup, find_packages
+from glob import glob
+
 
 setup(
     name='indexGPU',
-    version='0.1.58',
+    version='0.1.59',
     packages=find_packages(),
     install_requires=[
         "inichord >= 0.1.15",
@@ -14,6 +16,7 @@ setup(
  	data_files=[('Lib/site-packages/indexGPU', ['indexGPU/Indexation_GUI.ui']),('Lib/site-packages/indexGPU', ['indexGPU/Indexation_GUI_tempo2.ui']),
               ('Lib/site-packages/indexGPU', ['indexGPU/phase_form_tempo.ui']),('Lib/site-packages/indexGPU', ['indexGPU/Indexation_lib.py']),
               ('Lib/site-packages/indexGPU', ['indexGPU/phaseGUI_classes_local.py']),
+			  ('Lib/site-packages/indexGPU/icons', ['indexGPU/icons/*'])
      ],
     
     # package_data={
