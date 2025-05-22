@@ -27,9 +27,9 @@ import indexGPU.Xallo as xa
 from indexGPU import Symetry as sy
 
 #------------------------------import for pypi lib use-------------------------
-import Indexation_lib as indGPU
-import Compute_IPF as IPF_computation
-import phaseGUI_classes_local as phaseClass
+import indexGPU.Indexation_lib as indGPU
+import indexGPU.Compute_IPF as IPF_computation
+import indexGPU.phaseGUI_classes_local as phaseClass
 
 #------------------------------import for local dev use------------------------
 # import Indexation_lib as indGPU
