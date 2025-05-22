@@ -13,7 +13,7 @@ setup(
     ],
  	data_files=[('Lib/site-packages/indexGPU', ['indexGPU/Indexation_GUI.ui']),('Lib/site-packages/indexGPU', ['indexGPU/Indexation_GUI_tempo2.ui']),
               ('Lib/site-packages/indexGPU', ['indexGPU/phase_form_tempo.ui']),('Lib/site-packages/indexGPU', ['indexGPU/Indexation_lib.py']),
-              ('Lib/site-packages/indexGPU', ['indexGPU/phaseGUI_classes.py']),
+              ('Lib/site-packages/indexGPU', ['indexGPU/phaseGUI_classes_local.py']),
      ],
     
     # package_data={
