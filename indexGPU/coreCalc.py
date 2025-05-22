@@ -867,7 +867,9 @@ class Controller:
                     self.drawCHORDprofiles()
                     
                     self.view.quat_textEdit.ensureCursorVisible()
-                    self.view.quat_textEdit.insertPlainText(f"\n \u2022 Quaternion [{self.x}, {self.y}] :\n  {self.res.ori_f[:, self.y, self.x]}")   
+                    formatted_string = ", ".join(f"{nombre:.5f}" for nombre in self.res.ori_f[:, self.y, self.x])
+                    # self.view.quat_textEdit.insertPlainText(f"\n \u2022 Quaternion [{self.x}, {self.y}] :\n  {self.res.ori_f[:, self.y, self.x]:.5f}") 
+                    self.view.quat_textEdit.insertPlainText(f"\n \u2022 Quaternion [{self.x}, {self.y}] :\n  {formatted_string}") 
                     self.view.quat_textEdit.ensureCursorVisible()
                 QApplication.processEvents()
             except:
