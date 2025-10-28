@@ -23,18 +23,20 @@ from PyQt5.QtWidgets import QApplication, QLabel, QDialog, QVBoxLayout, QPushBut
 from PyQt5 import QtCore, QtGui
 
 from inichord import General_Functions as gf
-import indexGPU.Xallo as xa
-from indexGPU import Symetry as sy
 
-#------------------------------import for pypi lib use-------------------------
-import indexGPU.Indexation_lib as indGPU
-import indexGPU.Compute_IPF as IPF_computation
-import indexGPU.phaseGUI_classes_local as phaseClass
+#------------------------------import for GitHub lib use-------------------------
+# import indexGPU.Indexation_lib as indGPU
+# import indexGPU.Compute_IPF as IPF_computation
+# import indexGPU.phaseGUI_classes_local as phaseClass
+# import indexGPU.Xallo as xa
+# from indexGPU import Symetry as sy
 
 #------------------------------import for local dev use------------------------
-# import Indexation_lib as indGPU
-# import Compute_IPF as IPF_computation
-# import phaseGUI_classes_local as phaseClass
+import Indexation_lib as indGPU
+import Compute_IPF as IPF_computation
+import phaseGUI_classes_local as phaseClass
+import Xallo as xa
+import Symetry as sy
 
 
 from pyquaternion import Quaternion

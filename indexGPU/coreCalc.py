@@ -5,25 +5,30 @@ Created on Sat Apr 19 12:34:09 2025
 @author: clanglois1
 """
 import os
+import sys
 import numpy as np
 import pyqtgraph as pg
 from inichord import General_Functions as gf
-import indexGPU.Xallo as xa
-from indexGPU import Symetry as sy
+
 import tifffile as tf
 from PyQt5.QtWidgets import QApplication
 from PyQt5 import QtCore, QtGui
 
-#------------------------------import for pypi lib use-------------------------
-import indexGPU.Indexation_lib as indGPU
-from indexGPU.data_classes import Final_Index_res
-import indexGPU.Compute_IPF as IPF_computation
+#------------------------------import for GitHub lib use-------------------------
+# import indexGPU.Indexation_lib as indGPU
+# from indexGPU.data_classes import Final_Index_res
+# import indexGPU.Compute_IPF as IPF_computation
+# import indexGPU.Xallo as xa
+# from indexGPU import Symetry as sy
 
 #------------------------------import for local dev use------------------------
-# import Indexation_lib as indGPU
-# from data_classes import Final_Index_res
-# import Compute_IPF as IPF_computation
-
+import Indexation_lib as indGPU
+from data_classes import Final_Index_res
+import Compute_IPF as IPF_computation
+import Xallo as xa
+import Symetry as sy
+from Indexation_GUI import MainView
+from data_classes import Model
 
 import time
 from pyquaternion import Quaternion
@@ -882,3 +887,28 @@ class Controller:
                 QApplication.processEvents()
             except:
                 pass
+
+class Indexation_orientation():
+ # Run the indexing sub-gui
+	def __init__(self):
+	    # Colors will be applied to all the sub-gui
+		self.color1 = (255, 255, 255) # Background color of imageView
+		self.color2 = (255, 255, 255) # Background color of PlotWidget
+		self.color3 = (243, 98, 64)   # PushButton color (for Qsplitter in ImageView)
+		self.color4 = (243, 98, 64, 150) # Color of the line plot number 1
+		self.color5 = (243, 98, 64)   # Color of the line plot number 2
+		self.color6 = (193, 167, 181,50) # Brush Color for legend in plot
+		
+		self.model = Model()
+		self.w = MainView(self)
+		self.controller = Controller(self.model, self.w)
+		self.w.show()
+		
+				
+		
+#%% Opening of the initial data    
+if __name__ == '__main__':
+	app = QApplication(sys.argv)
+	a = Indexation_orientation()
+	app.setQuitOnLastWindowClosed(True)
+	app.exec_() 	

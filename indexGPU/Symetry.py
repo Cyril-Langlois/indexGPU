@@ -4,24 +4,23 @@ Created on Tue Jul  7 10:09:52 2020
 
 @author: Cyril Langlois
 """
-
-
 import os
 import sys
 
 sep = os.sep
 cwd = os.getcwd()
 
-# LibPath = os.path.dirname(cwd) + sep
-# sys.path.insert(0, LibPath)
-
-
-from indexGPU import Xallo as xa
-
 import numpy as np
 from pyquaternion import Quaternion
 import Dans_Diffraction as dif
 import matplotlib.pyplot as plt
+
+#------------------------------import for GitHub use-------------------------
+# from indexGPU import Xallo as xa
+
+#------------------------------import for local dev use------------------------
+import Xallo as xa
+
 
 # instruction pour afficher les atbleaux de façon lisible
 np.set_printoptions(suppress=True, precision=2)

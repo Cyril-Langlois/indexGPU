@@ -7,17 +7,18 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLineEdit, QCheckBox, QSpinBox, QGroupBox, QTextEdit, QHBoxLayout, QVBoxLayout, QDialog, QRadioButton, QFileDialog, QLabel, QMessageBox
 from PyQt5.QtCore import Qt, QTimer, QSize
 
-#------------------------------import for pypi lib use-------------------------
-import indexGPU.Indexation_lib as il
-
-#------------------------------import for local dev use------------------------
-# import Indexation_lib as il
-
 import numpy as np
 import tifffile as tf
 import h5py
 from inichord import General_Functions as gf
 import Dans_Diffraction as da
+
+#------------------------------import for GitHub use-------------------------
+# import indexGPU.Indexation_lib as il
+
+#------------------------------import for local dev use------------------------
+import Indexation_lib as il
+
 
 ##############################  the following classes are used for indexation  ##########################################
 path2thisFile = abspath(getsourcefile(lambda:0))

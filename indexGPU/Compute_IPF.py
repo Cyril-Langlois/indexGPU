@@ -15,8 +15,7 @@ import matplotlib.pyplot as plt
 import diffpy
 
 import Dans_Diffraction as da
-import indexGPU.Xallo as xa
-from indexGPU import Symetry as sy
+
 
 from orix.crystal_map import CrystalMap, PhaseList
 from orix.quaternion import Rotation, symmetry
@@ -27,6 +26,16 @@ import tkinter as tk
 from tkinter import filedialog, Tk
 
 from inichord import General_Functions as gf
+
+#------------------------------import for GitHub lib use-------------------------
+# import indexGPU.Xallo as xa
+# from indexGPU import Symetry as sy
+
+#------------------------------import for local dev use------------------------
+import Xallo as xa
+import Symetry as sy
+
+
 
 root = tk.Tk()       # initialisation du dialogue
 root.withdraw()
