@@ -7,20 +7,23 @@ Created on Sat Apr 19 12:33:53 2025
 import os
 import numpy as np
 from inichord import General_Functions as gf
-import indexGPU.Xallo as xa
-from indexGPU import Symetry as sy
+
 import tifffile as tf
 import h5py
 
 import time
 
-#------------------------------import for pypi lib use-------------------------
-import indexGPU.phaseGUI_classes_local as phaseClass
-import indexGPU.Indexation_lib as indGPU
+#------------------------------import for GitHub use-------------------------
+# import indexGPU.phaseGUI_classes_local as phaseClass
+# import indexGPU.Indexation_lib as indGPU
+# import indexGPU.Xallo as xa
+# from indexGPU import Symetry as sy
 
 #------------------------------import for local dev use------------------------
-# import phaseGUI_classes_local as phaseClass
-# import Indexation_lib as indGPU
+import phaseGUI_classes_local as phaseClass
+import Indexation_lib as indGPU
+import Xallo as xa
+import Symetry as sy
 
 
 from PyQt5.QtWidgets import QApplication, QMessageBox
