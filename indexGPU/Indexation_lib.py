@@ -269,6 +269,7 @@ class IndexationGPUderiv:
         self.parent.progressBar.setRange(0, progress_len) # Set the range according to the number of batches
         step = 0
 
+        print("dev Indexation_lib library running")
         for y in range(self.expChunkNB + 1 * self.remain): # +1 pour prendre en compte le testChunk avec le reste
             
             normedGPUtest = cp.array(self.testArrayList[y])
@@ -296,15 +297,42 @@ class IndexationGPUderiv:
                     normedGPU = cp.array(self.listChunkArraysDiff[j][k*self.dbChunks:(k+1)*self.dbChunks, :])
 
                     # calcul du tableau de distances
-                    distances = cp.matmul(normedGPU, normedGPUtest)
+                    # calcul avec fenêtres__________________________________________
+                   
+                    # --- 1. Setup (Example Data) ---
+                    N = 10   # Vectors in A
+                    L = 180  # Full vector length
+                    M = 300  # Vectors in B
+                    K = 10
+                    
+                    W = len(normedGPU[0, :]) // K   # Window length
+                                                         
+                    # --- 2. Reshape ---
+                    # A: (10, 180) -> (10, 10, 18)
+                    normedGPU_reshaped = normedGPU.reshape(N, K, W)
+                    
+                    # B: (180, 300) -> (10, 18, 300)
+                    normedGPUtest_reshaped = normedGPUtest.reshape(K, W, M)
+                    
+                    # --- 3. Batch MatMul ---
+                    # The result C_intermediate has shape (10, 10, 300)
+                    NCC_intermediate = cp.matmul(normedGPU_reshaped, normedGPUtest_reshaped)
+                    
+                    # --- 4. Sum the Windows ---
+                    # Sum along the window dimension (axis=1)
+                    NCC_final = cp.sum(NCC_intermediate, axis=1)
+                    
+                    # calcul original sur l'ensemble de la longuer des vecteurs_____
+                    #distances = cp.matmul(normedGPU, normedGPUtest)
                     del normedGPU
 
                     self.mempool.free_all_blocks()
                     self.pinned_mempool.free_all_blocks()
 
-                    listDist[k, :] = cp.asnumpy(cp.max(distances, axis=0))
-                    listInd[k,:] = cp.asnumpy(np.argmax(distances, axis=0))
-                    del distances  
+                    listDist[k, :] = cp.asnumpy(cp.max(NCC_final, axis=0))
+                    listInd[k,:] = cp.asnumpy(np.argmax(NCC_final, axis=0))
+                    # del distances
+                    del NCC_final
                     
                     # on libère la mémoire
                     self.mempool.free_all_blocks()
