@@ -139,8 +139,8 @@ class IndexationGPUderiv:
 
         # self.nbSTACK = nbSTACK
         # self.nbDB = nbDB
-        self.nbSTACK = 6_000
-        self.nbDB = 6_000
+        self.nbSTACK = 1_000
+        self.nbDB = 1_000
         
         self.dimPROF = dimPROF
 
@@ -286,6 +286,9 @@ class IndexationGPUderiv:
         
             normedGPUtest = cp.array(self.testArrayList[y])
             r = cp.stack(cp.vsplit(normedGPUtest, nW), axis = 2)
+            
+            #déviation standard des profils théo
+            r_std_like = cp.einsum('ilk, ilk -> lk', r, r)
             # r = normedGPUtest
             del normedGPUtest
             
@@ -314,59 +317,8 @@ class IndexationGPUderiv:
            
                     normedGPU = cp.array(self.listChunkArraysDiff[j][k*self.dbChunks:(k+1)*self.dbChunks, :])
                     
-                    # # --- 1. Setup (Correct Dimensions) ---
-                    # N = self.dbChunks  # Vectors in A (rows)
-                    # L = self.actualProfLength    # Full vector length (inner dimension)
-                    # M = nbSTACKcurr  # Vectors in B (columns)
-                    # W = 18     # Window length (180 / 10)
-                    # K = L // W # Number of windows (10)
-                    
-                    # # Create example CuPy arrays on the GPU
-                    # # A = cp.random.rand(N, L, dtype=cp.float32)  # Shape (20000, 180)
-                    # # B = cp.random.rand(L, M, dtype=cp.float32)  # Shape (180, 19092)
-                    
-                    # # print(f"Input A shape: {A.shape}")
-                    # # print(f"Input B shape: {B.shape}")
-                    
-                    # # --- 2. Reshape for Batch MatMul ---
-                    # # A: (N, L) -> (N, K, W) -> (20000, 10, 18)
-                    # # A_reshaped = A.reshape(N, K, W)
-                    # A_reshaped = normedGPU.reshape(N, K, W)
-                    # # B: (L, M) -> (K, W, M) -> (10, 18, 19092)
-                    # B_T_reshaped = normedGPUtest.T.reshape(M, K, W)
-                    
-                    # # Add singleton axes for broadcast (N vs M)
-                    # # A_final: (N, 1, K, W) -> (20000, 1, 10, 18)
-                    # A_final = A_reshaped[:, cp.newaxis, :, :]
-                    # del normedGPU
-                    
-                    # # B_final: (1, M, K, W) -> (1, 19092, 10, 18)
-                    # B_final = B_T_reshaped[cp.newaxis, :, :, :]
-                    
-                    # # --- 3. Element-wise Multiplication and Sum (The Dot Product) ---
-                    # # Operation: (N, 1, K, W) * (1, M, K, W)
-                    # # Resulting shape after multiplication: (N, M, K, W) -> (20000, 19092, 10, 18)
-                    
-                    # C_product = A_final * B_final
-                    # del A_final
-                    # del B_final    
-                    
-                    # # C_intermediate: Sum over the window length (W=18, axis=-1)
-                    # # This computes the dot product for each of the K=10 windows.
-                    # # Resulting shape: (N, M, K) -> (20000, 19092, 10)
-                    # NCC_intermediate = cp.sum(C_product, axis=-1)
-
-                    # del C_product
-                    
-                    # # --- 4. Sum the Windows ---
-                    # # Sum along the window dimension (K=10, axis=-1)
-                    # # The final result C_final has shape (N, M) -> (20000, 19092)
-                    # distances = cp.sum(NCC_intermediate, axis=-1)
-                    
-                    # del NCC_intermediate
                     # # calcul original sur l'ensemble de la longuer des vecteurs_____
                     # #distances = cp.matmul(normedGPU, normedGPUtest)
-                    # distances = cp.matmul(normedGPU, r)
 
                     # self.mempool.free_all_blocks()
                     # self.pinned_mempool.free_all_blocks()
@@ -375,21 +327,55 @@ class IndexationGPUderiv:
                     # s = cp.zeros((size, sizeC))
                     # for i in range(nW):
                     #     s += cp.matmul(normedGPU[:, i*sizeW:(i+1)*sizeW], normedGPUtest[i*sizeW:(i+1)*sizeW, :])
-                    # del normedGPU
-                    
+                    # del normedGPU                    
                     # distances = s / nW
                     # del s
 
+                    # # version donnant la meme chose que le matmul classique
+                    # l = cp.stack(cp.hsplit(normedGPU, nW), axis = 2)
+                    # # rdéviation standard des profils théo = cp.stack(cp.vsplit(normedGPUtest, nW), axis = 2)
+                    # del normedGPU
+                    # res = cp.einsum('ijl,jkl->ikl', l, r)
+                    # del l
+
+                    # distances = cp.sum(res, axis = 2) / nW
+                    # del res
+
+                    # version avec corrcoef sans fenêtres qui devrait donner comme matmul
+                    # distances = cp.corrcoef(normedGPU, normedGPUtest.T)[:self.dbChunks, self.dbChunks:]
+                    # ça marche (mais très lent), maintenant faut le faire par fenetres
+
+                    # version avec corrcoef "maison" et avec fenêtres (donc résultat différent de matmul)
                     l = cp.stack(cp.hsplit(normedGPU, nW), axis = 2)
-                    # r = cp.stack(cp.vsplit(normedGPUtest, nW), axis = 2)
                     del normedGPU
+                    
+                    # calcul de la covariance des deux jeux de données, fenêtre par fenetre
+                    # et 
+                    
                     res = cp.einsum('ijl,jkl->ikl', l, r)
+                    l_std_like = cp.einsum('ilk, ilk -> ik', l, l)
                     del l
-
-                    distances = cp.sum(res, axis = 2) / nW
+                    
+                    # après cette opération, on a res qui est un tableau (3000, 2000, nW)
+                                        
+                    #on introduit un axe pour le broadcasting
+                    var_i = l_std_like[:, cp.newaxis, :]  # (M, 1, batch)
+                    var_j = r_std_like[cp.newaxis, :, :]  # (1, M, batch)
+                    del l_std_like
+                    
+                    
+                    denominator = cp.sqrt(var_i * var_j)
+                    del var_i
+                    del var_j
+                    
+                    batchCorrMat = res / denominator
                     del res
-
-
+                    del denominator
+                    
+                    # on a alors un tableau (3000, 2000, 10)
+                    # dont on fait la somme
+                    distances = cp.sum(batchCorrMat, axis = 2)
+                    
                     listDist[k, :] = cp.asnumpy(cp.max(distances, axis=0))
                     listInd[k,:] = cp.asnumpy(np.argmax(distances, axis=0))
                     del distances
@@ -414,6 +400,7 @@ class IndexationGPUderiv:
               
         # del normedGPUtest
         del r
+        del r_std_like
         self.mempool.free_all_blocks()
         self.pinned_mempool.free_all_blocks()
         t2 = time.time()
@@ -545,6 +532,25 @@ class IndexationGPUderiv:
                 Theo_stack_wind = cp.asarray(test_theo[int(incr[k]) : int(incr[k+1]) ,var*i:var*(i+1)])
                 rawImage_wind = cp.asarray(test_exp[int(incr[k]) : int(incr[k+1]) ,var*i:var*(i+1)])
                 
+                '''
+                avec corrcoef et deux ensemble de données x (shape (777, 64) et y (shape (777, 36)), on calcule :
+                    corr(x, x), size 64 by 64  |  corr(x, y), size 64 by 36
+                    ---------------------------+---------------------------
+                    corr(y, x), size 36 by 64  |  corr(y, y), size 36 by 36
+                
+                - comme on cherche la corrélation de x avec y, on prend le cadran supérieur droit, 
+                d'ou la ligne NCC_var[:len(NCC_var)//2, len(NCC_var)//2:]
+                
+                - puis, comme on veut la valeur de corrélation des profils de la meme ligne en x et y, 
+                alors on ne regarde que la diagonale du résultat, d'où l'instruction cp.diag
+                - ce calcul est fait pour une fenêtre, et cette diagonale vient s'ajouter aux autres correlation 
+                des autres fenêtres.
+                
+                - si on veut utiliser cela dans l'indexation, il ne faut pas prendre la diagonale
+                il faut tout garder le cadran intéressant, et prendre la valeur max selon la bonne dimension
+                              
+                    
+                '''
                 NCC_var = cp.corrcoef(Theo_stack_wind,rawImage_wind, rowvar = False)
                 NCC_var2 = cp.diag(NCC_var[:len(NCC_var)//2, len(NCC_var)//2:])
                 NCC_var2 = cp.asnumpy(NCC_var2)
