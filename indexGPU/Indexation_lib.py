@@ -139,8 +139,8 @@ class IndexationGPUderiv:
 
         # self.nbSTACK = nbSTACK
         # self.nbDB = nbDB
-        self.nbSTACK = 1_000
-        self.nbDB = 1_000
+        self.nbSTACK = 3_000
+        self.nbDB = 4_000
         
         self.dimPROF = dimPROF
 
