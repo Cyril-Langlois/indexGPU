@@ -137,8 +137,11 @@ class IndexationGPUderiv:
         self.DB = database
         self.CIF = CIFfile
 
-        self.nbSTACK = nbSTACK
-        self.nbDB = nbDB
+        # self.nbSTACK = nbSTACK
+        # self.nbDB = nbDB
+        self.nbSTACK = 6_000
+        self.nbDB = 6_000
+        
         self.dimPROF = dimPROF
 
         self.Workflow = Workflow
@@ -273,10 +276,19 @@ class IndexationGPUderiv:
         print("dev Indexation_lib library running")
         for y in range(self.expChunkNB + 1 * self.remain): # +1 pour prendre en compte le testChunk avec le reste
             
+            nbSTACKcurr =  len(self.testArrayList[y][0])
+            
+            length = self.actualProfLength
+            nW = 10
+            sizeW = length // nW
+            size = self.dbChunks
+            sizeC = nbSTACKcurr
+        
             normedGPUtest = cp.array(self.testArrayList[y])
-        
-            nbSTACKcurr =  len(self.testArrayList[y][0])  
-        
+            r = cp.stack(cp.vsplit(normedGPUtest, nW), axis = 2)
+            # r = normedGPUtest
+            del normedGPUtest
+            
             distDataChunk = np.zeros((len(self.listChunksNames), nbSTACKcurr))
             indDataChunk = np.zeros((len(self.listChunksNames), nbSTACKcurr))
             miniChunkInd = np.zeros((len(self.listChunksNames), nbSTACKcurr))
@@ -292,48 +304,96 @@ class IndexationGPUderiv:
                 QApplication.processEvents() 
                 self.ValSlice = step
                 self.progression_bar()
-                                
+               
+                print(f"Exp. datachunk {j} out of {len(self.listChunksNames)}")
+
+                # essai plus simple
+
+                
                 for k in range(self.loopDB): # on traite le DataChunk courant par petits bouts
            
                     normedGPU = cp.array(self.listChunkArraysDiff[j][k*self.dbChunks:(k+1)*self.dbChunks, :])
+                    
+                    # # --- 1. Setup (Correct Dimensions) ---
+                    # N = self.dbChunks  # Vectors in A (rows)
+                    # L = self.actualProfLength    # Full vector length (inner dimension)
+                    # M = nbSTACKcurr  # Vectors in B (columns)
+                    # W = 18     # Window length (180 / 10)
+                    # K = L // W # Number of windows (10)
+                    
+                    # # Create example CuPy arrays on the GPU
+                    # # A = cp.random.rand(N, L, dtype=cp.float32)  # Shape (20000, 180)
+                    # # B = cp.random.rand(L, M, dtype=cp.float32)  # Shape (180, 19092)
+                    
+                    # # print(f"Input A shape: {A.shape}")
+                    # # print(f"Input B shape: {B.shape}")
+                    
+                    # # --- 2. Reshape for Batch MatMul ---
+                    # # A: (N, L) -> (N, K, W) -> (20000, 10, 18)
+                    # # A_reshaped = A.reshape(N, K, W)
+                    # A_reshaped = normedGPU.reshape(N, K, W)
+                    # # B: (L, M) -> (K, W, M) -> (10, 18, 19092)
+                    # B_T_reshaped = normedGPUtest.T.reshape(M, K, W)
+                    
+                    # # Add singleton axes for broadcast (N vs M)
+                    # # A_final: (N, 1, K, W) -> (20000, 1, 10, 18)
+                    # A_final = A_reshaped[:, cp.newaxis, :, :]
+                    # del normedGPU
+                    
+                    # # B_final: (1, M, K, W) -> (1, 19092, 10, 18)
+                    # B_final = B_T_reshaped[cp.newaxis, :, :, :]
+                    
+                    # # --- 3. Element-wise Multiplication and Sum (The Dot Product) ---
+                    # # Operation: (N, 1, K, W) * (1, M, K, W)
+                    # # Resulting shape after multiplication: (N, M, K, W) -> (20000, 19092, 10, 18)
+                    
+                    # C_product = A_final * B_final
+                    # del A_final
+                    # del B_final    
+                    
+                    # # C_intermediate: Sum over the window length (W=18, axis=-1)
+                    # # This computes the dot product for each of the K=10 windows.
+                    # # Resulting shape: (N, M, K) -> (20000, 19092, 10)
+                    # NCC_intermediate = cp.sum(C_product, axis=-1)
 
-                    # calcul du tableau de distances
-                    # calcul avec fenêtres__________________________________________
-                   
-                    # --- 1. Setup (Example Data) ---
-                    N = 10   # Vectors in A
-                    L = 180  # Full vector length
-                    M = 300  # Vectors in B
-                    K = 10
+                    # del C_product
                     
-                    W = len(normedGPU[0, :]) // K   # Window length
-                                                         
-                    # --- 2. Reshape ---
-                    # A: (10, 180) -> (10, 10, 18)
-                    normedGPU_reshaped = normedGPU.reshape(N, K, W)
+                    # # --- 4. Sum the Windows ---
+                    # # Sum along the window dimension (K=10, axis=-1)
+                    # # The final result C_final has shape (N, M) -> (20000, 19092)
+                    # distances = cp.sum(NCC_intermediate, axis=-1)
                     
-                    # B: (180, 300) -> (10, 18, 300)
-                    normedGPUtest_reshaped = normedGPUtest.reshape(K, W, M)
+                    # del NCC_intermediate
+                    # # calcul original sur l'ensemble de la longuer des vecteurs_____
+                    # #distances = cp.matmul(normedGPU, normedGPUtest)
+                    # distances = cp.matmul(normedGPU, r)
+
+                    # self.mempool.free_all_blocks()
+                    # self.pinned_mempool.free_all_blocks()
+
+                    # windowed version with loop
+                    # s = cp.zeros((size, sizeC))
+                    # for i in range(nW):
+                    #     s += cp.matmul(normedGPU[:, i*sizeW:(i+1)*sizeW], normedGPUtest[i*sizeW:(i+1)*sizeW, :])
+                    # del normedGPU
                     
-                    # --- 3. Batch MatMul ---
-                    # The result C_intermediate has shape (10, 10, 300)
-                    NCC_intermediate = cp.matmul(normedGPU_reshaped, normedGPUtest_reshaped)
-                    
-                    # --- 4. Sum the Windows ---
-                    # Sum along the window dimension (axis=1)
-                    NCC_final = cp.sum(NCC_intermediate, axis=1)
-                    
-                    # calcul original sur l'ensemble de la longuer des vecteurs_____
-                    #distances = cp.matmul(normedGPU, normedGPUtest)
+                    # distances = s / nW
+                    # del s
+
+                    l = cp.stack(cp.hsplit(normedGPU, nW), axis = 2)
+                    # r = cp.stack(cp.vsplit(normedGPUtest, nW), axis = 2)
                     del normedGPU
+                    res = cp.einsum('ijl,jkl->ikl', l, r)
+                    del l
 
-                    self.mempool.free_all_blocks()
-                    self.pinned_mempool.free_all_blocks()
+                    distances = cp.sum(res, axis = 2) / nW
+                    del res
 
-                    listDist[k, :] = cp.asnumpy(cp.max(NCC_final, axis=0))
-                    listInd[k,:] = cp.asnumpy(np.argmax(NCC_final, axis=0))
-                    # del distances
-                    del NCC_final
+
+                    listDist[k, :] = cp.asnumpy(cp.max(distances, axis=0))
+                    listInd[k,:] = cp.asnumpy(np.argmax(distances, axis=0))
+                    del distances
+
                     
                     # on libère la mémoire
                     self.mempool.free_all_blocks()
@@ -352,7 +412,8 @@ class IndexationGPUderiv:
             self.miniChunk_finalList.append(np.take_along_axis(miniChunkInd, maxInd_array, axis=0)[-1:, :])
             self.whichDataChunkList.append(maxInd_array[-1:, :])
               
-        del normedGPUtest
+        # del normedGPUtest
+        del r
         self.mempool.free_all_blocks()
         self.pinned_mempool.free_all_blocks()
         t2 = time.time()
