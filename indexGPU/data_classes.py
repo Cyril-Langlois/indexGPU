@@ -74,6 +74,7 @@ class Model:
         for i in list_group_Keys:
             group = f[i]
             list_attributs = list(group.attrs.keys())
+            print("1 ", list_attributs)
             if "lenProf" in list_attributs:
                 self.lenProf = group.attrs['lenProf']
             if "profile length" in list_attributs:
@@ -104,45 +105,58 @@ class Model:
         for i in list_group_Keys:
             group = f[i]
             list_attributs = list(group.attrs.keys())
+            print("2 ", list_attributs)
             if "nPhases" in list_attributs:
                 self.nPhases = group.attrs['nPhases']            
-            elif "cluster" in list_attributs:
-                self.cluster = group.attrs['cluster']            
-            elif "otsu" in list_attributs:
-                self.otsu = group.attrs['otsu']            
-            elif "stack path" in list_attributs:
+            if "cluster" in list_attributs:
+                self.cluster = group.attrs['cluster']  
+                print(f"correct reading cluster {self.cluster}")
+            if "otsu" in list_attributs:
+                self.otsu = group.attrs['otsu'] 
+                print(f"correct reading otsu {self.otsu}")
+            if "stack path" in list_attributs:
                 self.indexRes.stack_path = group.attrs['stack path']
-            elif "normalization before indexation" in list_attributs:
+            if "normalization before indexation" in list_attributs:
                 self.indexRes.normType = group.attrs['normalization before indexation']                
-            elif "metric for Indexation" in list_attributs:
+            if "metric for Indexation" in list_attributs:
                 self.indexRes.metric = group.attrs['metric for Indexation']
          
         for i in list_dataset_Keys:
             if "dist" in i or "nScoresDist" in i: # Extract the distance
                 self.indexRes.dist = np.asarray(f[i])
-            elif "theo_stack" in i or "nScoresStack" in i: # Extract the theoretical stack
+            if "theo_stack" in i or "nScoresStack" in i: # Extract the theoretical stack
                 self.indexRes.theo_stack = np.asarray(f[i])
-            elif "ori_f" in i or "nScoresOri" in i: # Extract the quaternions
+            if "ori_f" in i or "nScoresOri" in i: # Extract the quaternions
                 self.indexRes.ori_f = np.asarray(f[i])
-            elif "rawImage" in i: # Extract the experimental stack
+            if "rawImage" in i: # Extract the experimental stack
                 self.indexRes.rawImage = np.asarray(f[i])
-            elif "theoStack_mod" in i or "Treatment_theo_prof" in i: # Extract the theoretical stack in it modified shape
+            if "theoStack_mod" in i or "Treatment_theo_prof" in i: # Extract the theoretical stack in it modified shape
                 self.indexRes.theoStack_mod = np.asarray(f[i])
-            elif "expStack_mod" in i or "testArrayList" in i: # Extract the experimental stack in it modified shape
+            if "expStack_mod" in i or "testArrayList" in i: # Extract the experimental stack in it modified shape
                 self.indexRes.expStack_mod = np.asarray(f[i])
-            elif "quality_final" in i: # Extract the quality map
+            if "quality_final" in i: # Extract the quality map
                 self.indexRes.quality_final = np.asarray(f[i])
-            elif "phase_map" in i: # Extract the quality map
+            if "phase_map" in i: # Extract the quality map
                 self.indexRes.phase_map = np.asarray(f[i])
                 self.indexRes.legacy = False
-            elif "IPF_final_X" in i: # Extract the quality map
+            if "IPF_final_X" in i: # Extract the quality map
                 self.indexRes.IPF_final_X = np.asarray(f[i])
-            elif "IPF_final_Y" in i: # Extract the quality map
+            if "IPF_final_Y" in i: # Extract the quality map
                 self.indexRes.IPF_final_Y = np.asarray(f[i])
-            elif "IPF_final_Z" in i: # Extract the quality map
+            if "IPF_final_Z" in i: # Extract the quality map
                 self.indexRes.IPF_final_Z = np.asarray(f[i])
-            elif "labels" in i: # Extract the quality map
+            if "labels" in i: # Extract the quality map
                 self.indexRes.labels = np.asarray(f[i])
+        
+        # considering the cluster and otsu cases
+        
+        self.indexRes.cluster = self.cluster
+        self.indexRes.otsu = self.otsu
+        print(f"flag cluster : {self.indexRes.cluster}, flag otsu : {self.indexRes.otsu}")
+        
+        if self.indexRes.cluster:
+            self.indexRes.height = len(self.indexRes.labels)
+            self.indexRes.width = len(self.indexRes.labels[0])
         
         # pour mettre kV et deg en attributs de l'objet res
         _ = self.indexRes.extract_conditions()

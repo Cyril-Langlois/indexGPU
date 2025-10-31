@@ -166,9 +166,6 @@ class MainView(uiclass, baseclass):
         # self.prgbar = self.ValSlice
         self.progressBar.setValue(self.prgbar)
 
-
-
-
     def defaultdrawCHORDprofiles(self): # Default display of CHORDprofiles
         # Image serie
         self.profiles.clear()

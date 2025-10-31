@@ -136,7 +136,7 @@ class Controller:
             self.indexation[p].nScoresStack = self.indexation[p].nScoresStack_tempo
             self.indexation[p].Treatment_theo_prof = self.indexation[p].Treatment_theo_prof_tempo
             self.indexation[p].testArrayList = self.indexation[p].testArrayList_tempo
-        
+    
     def phase_map_normal(self):
         # Discrimination based on quality maps
         # Creates a phase map and listCoordPhases 
@@ -163,8 +163,10 @@ class Controller:
                 quality[i, :, :] = qual
             else :
                 quality[i, :, :] = self.indexation[i].quality_map
+                
         self.metric = self.indexation[i].metric
         self.nW = self.indexation[i].nW
+        
         # Table of indices (=phase number) where the quality map is the greatest = phase map
         self.phase_map = np.argmax(quality, axis = 0) 
         for i in range (self.model.nPhases):
@@ -413,7 +415,6 @@ class Controller:
         
         self.view.lineROI_carto.setVisible(True)
         self.view.label_phases.setVisible(True)
-        
      
         self.activate_ROI_plots(True)
         if len(self.res.CIF_path) > 1:
@@ -443,9 +444,7 @@ class Controller:
             self.res.theoStack_mod = self.res.theoStack_mod[0]
             self.res.theo_stack = self.res.theo_stack[0]
             self.res.ori_f = self.res.ori_f[0]
-            
-            
-            
+
             # Compute IPFs
             toIndex = [True]
             listCIF = self.model.CIF_path
@@ -596,7 +595,7 @@ class Controller:
             if not self.res.legacy:
                 for i, phase in enumerate(self.res.phase_names):
                     print(i, phase)
-                    saveName += " " + phase + "_" + str(self.res.database_size[i]) + '_diff' + str(self.res.diff[i]) + ' |'
+                    saveName += " " + phase + " " + str(self.res.database_size[i]) + ' diff ' + str(self.res.diff[i]) + '  | '
             else:
                 print(self.res.phase_names[0])
                 saveName += " " + str(self.res.phase_names[0]) + "  "
@@ -859,10 +858,12 @@ class Controller:
     
             self.x = int(mousePoint.x())
             self.y = int(mousePoint.y())
- 
-            if self.x >= 0 and self.y >= 0 and self.x < self.width and self.y < self.height:
+
+            # if self.x >= 0 and self.y >= 0 and self.x < self.width and self.y < self.height:
+            if self.x >= 0 and self.y >= 0 and self.x < self.res.width and self.y < self.res.height:
 
                 self.drawCHORDprofiles()
+                    
                 try:
                     self.view.label_Quality.setText("Quality index: " + str(np.round(self.res.quality_final[self.y, self.x],1)) + "%")
                 except:
@@ -925,7 +926,7 @@ class Controller:
             try:
                 if self.x >= 0 and self.y >= 0 and self.x < self.width and self.y < self.height:
                     self.drawCHORDprofiles()
-                    
+                   
                     self.view.quat_textEdit.ensureCursorVisible()
                     formatted_string = ", ".join(f"{nombre:.5f}" for nombre in self.res.ori_f[:, self.y, self.x])
                     # self.view.quat_textEdit.insertPlainText(f"\n \u2022 Quaternion [{self.x}, {self.y}] :\n  {self.res.ori_f[:, self.y, self.x]:.5f}") 
@@ -934,6 +935,8 @@ class Controller:
                 QApplication.processEvents()
             except:
                 pass
+
+                
 
 class Indexation_orientation():
  # Run the indexing sub-gui
