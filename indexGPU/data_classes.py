@@ -54,6 +54,7 @@ class Model:
     
     def reload_data(self):
 
+        self.reloadH5 = True
         self.nPhases = 0
 
         # Locate indexation file *.h5
@@ -65,6 +66,10 @@ class Model:
 
         self.CIF_path = []
         self.phase_names = []
+        self.database_path = []
+        self.database_size = []
+        self.diff = []
+        
         # load data from the h5 file - from 2025_04_22  + legacy (without multiphase nor IPF maps)     
         for i in list_group_Keys:
             group = f[i]
@@ -79,15 +84,22 @@ class Model:
                 self.width = group.attrs['width']
             if "CIF path" in list_attributs:
                 self.CIF_path.append(group.attrs['CIF path'])
-                self.database_path = group.attrs['database path']
-            self.phase_names.append(i)
-            self.nPhases += 1
+                self.database_path.append(group.attrs['database path'])
+                self.nPhases += 1
+                
+            if "database size" in list_attributs:    
+                self.database_size.append(group.attrs['database size'])
+                self.diff.append(group.attrs['index deriv'])
+                self.phase_names.append(i)
+                
 
         self.indexRes = Final_Index_res(self, self.height, self.width, self.lenProf)
         self.indexRes.CIF_path = self.CIF_path
         self.indexRes.savePath = self.StackDir
         self.indexRes.phase_names = self.phase_names
         self.indexRes.database_path = self.database_path
+        self.indexRes.database_size = self.database_size
+        self.indexRes.diff = self.diff
 
         for i in list_group_Keys:
             group = f[i]
@@ -132,6 +144,15 @@ class Model:
             elif "labels" in i: # Extract the quality map
                 self.indexRes.labels = np.asarray(f[i])
         
+        # pour mettre kV et deg en attributs de l'objet res
+        _ = self.indexRes.extract_conditions()
+
+        # delete any pre-existing preInd object
+        try:
+            del self.preInd
+        except:
+            pass
+
         return self.indexRes
         
 class preIndexation:
@@ -192,7 +213,6 @@ class Final_Index_res:
         self.otsu = model.otsu
         self.model = model
         self.legacy = True
-
                 
         self.rawImage = np.zeros((self.lenProf, self.height, self.width))
         self.expStack_mod = np.zeros((self.lenProf, self.height, self.width))
@@ -210,7 +230,7 @@ class Final_Index_res:
         
         self.labels = np.zeros((self.height, self.width))
         
-        # paths
+        # paths and text attr
         self.savePath = ""
         self.CIF_path = ""
         self.stack_path = ""
@@ -226,9 +246,10 @@ class Final_Index_res:
             self.saveName += "_" + p.name
             
         self.saveName += self.extract_conditions()
-        
+
         # indexSTACK = h5py.File(self.savePath + '\IndexData_'+ ti + '.hdf5', 'a')
-        indexSTACK = h5py.File(self.savePath + "\Indexation_" + self.saveName +  ti + ".hdf5", 'a')
+        # indexSTACK = h5py.File(self.savePath + "\Indexation_" + self.saveName +  ti + ".hdf5", 'a')
+        indexSTACK = h5py.File(self.savePath + "\Indexation_" + ti + self.saveName + ".hdf5", 'a')
         
         group = indexSTACK.create_group('indexation')
         
@@ -277,48 +298,36 @@ class Final_Index_res:
                 group_p.attrs.create("Savitzky Golay_window", "not indexed")  
             i += 1
 
-            
-            # if self.model.preInd.listToIndex[i]:
-            #     try:
-            #         group_p = indexSTACK.create_group(p.name)
-            #     except:
-            #         group_p = indexSTACK.create_group(str(i))
-            #     i += 1
-            #     group_p.attrs.create("CIF path", p.CifLoc)
-            #     group_p.attrs.create("database path", p.DatabaseLoc)
-            #     group_p.attrs.create("database size", p.DB_Size)
-            #     group_p.attrs.create("index deriv", p.diff)
-            #     group_p.attrs.create("Savitzky Golay", p.SG)
-            #     group_p.attrs.create("Savitzky Golay_poly", p.SG_poly)
-            #     group_p.attrs.create("Savitzky Golay_window", p.SG_win)
-        
         indexSTACK.flush()
         indexSTACK.close()
 
     def extract_conditions(self):
         save_name = ""
         
-        i = 0
-        while self.model.preInd.phaseList[i].DatabaseLoc == None and i < 10:
-            i +=1
+        try:
+            i = 0
+            while self.model.preInd.phaseList[i].DatabaseLoc == None and i < 10:
+                i +=1
         
-        if i < 10:
-            p = self.model.preInd.phaseList[i]
+            if i < 10:
+                p = self.model.preInd.phaseList[i]
             dbName = os.path.basename(p.DatabaseLoc)
-            val_kV = self.extract_str(dbName, "kV")
-            val_deg = self.extract_str(dbName, "deg")
-        
-            save_name = "_" + val_kV + "_" + val_deg + "_"
+            
+        except:
+            i = 0
+            while self.database_path[i] == 'not indexed':
+                i +=1
+            dbName = self.database_path[i]
 
-        else:
-            print("extract_conditions failed !")
-            save_name = ""
+        self.val_kV = self.extract_str(dbName, "kV")
+        self.val_deg = self.extract_str(dbName, "deg")
     
+        save_name = "_" + self.val_kV + "_" + self.val_deg + "_"
+       
         return save_name
             
     def extract_str(self, string, mark):
             index = string.find(mark)
-            
             try:
                 val = int(string[index - 2])
                 val = string[index - 2] + string[index - 1]
@@ -326,7 +335,46 @@ class Final_Index_res:
                 val = string[index - 1]
             
             return val + mark
+    
+    def saving_info_txt(self):
         
+        ti = time.strftime("%Y-%m-%d__%Hh-%Mm-%Ss")
+        
+        with open(self.savePath + '\Indexation_'+ ti + self.saveName + '_info.txt', 'w') as file:
+            
+            file.write("----------------- Indexation info  --------------------" + '\n')
+            file.write("acc. voltage : " + str(self.val_kV) + '\n')
+            file.write("tilt angle (deg) : " + str(self.val_deg) + '\n'*2)
+            
+            file.write("lenProf : " + str(self.lenProf) + '\n')
+            file.write("height : " + str(self.height) + '\n')
+            file.write("width : " + str(self.width) + '\n')
+            file.write("nPhases : " + str(self.nPhases) + '\n')
+            file.write("cluster : " + str(self.cluster) + '\n')
+            file.write("otsu : " + str(self.otsu) + '\n')
+            file.write("stack path : " + str(self.stack_path) + '\n')
+            file.write("normalization before indexation : " + str(self.normType) + '\n')
+            file.write("metric for Indexation : " + str(self.metric) + '\n')
+            file.write("       if metric = NCC, window nb : " + str(self.nW) + '\n'*3)
+            
+            i = 0
+            file.write("----------------- Phase(s) information --------------------" + '\n')
+            for p in self.model.preInd.phaseList:
+                try:
+                    file.write(str(p.name) + '\n')
+                    file.write("     CIF path : " + str(p.CifLoc) + '\n')
+                    file.write("     database path : " + str(p.DatabaseLoc) + '\n')
+                    file.write("     database size : " + str(p.DB_Size) + '\n')
+                    file.write("     index deriv : " + str(p.diff) + '\n')
+                    file.write("     Savitzky Golay / " + str(p.SG) + '\n')
+                    file.write("     Savitzky Golay_poly : " + str(p.SG_poly) + '\n')
+                    file.write("     Savitzky Golay_window : " + str(p.SG_win) + '\n')              
+                except: 
+                    file.write("Phase non indexed : " + str(i))
+
+                i += 1
+                
+                
     def savingMTEX(self):
         
         Quat = self.ori_f
@@ -334,17 +382,14 @@ class Final_Index_res:
         y = len(Quat[0][0])
 
         ti = time.strftime("%Y-%m-%d__%Hh-%Mm-%Ss")
-
-        kV = self.extract_str(self.database_path, "kV")
-        angle = self.extract_str(self.database_path, "deg")
         
         self.saveName = ""
         for p in self.phase_names:
             self.saveName += p + "-"
         
-        self.saveName = self.saveName + "_" + kV + "_" + angle + "_"
+        self.saveName = self.saveName + "_" + self.val_kV + "_" + self.val_deg + "_"
 
-        with open(self.savePath + '\CHORD'+ self.saveName + ti + '.quatCHORDv3-CTFxyConv.txt', 'w') as file:
+        with open(self.savePath + '\CHORD_'+ self.saveName + ti + '.quatCHORDv3-CTFxyConv.txt', 'w') as file:
 
             for i in range(x):
                 for j in range(y):

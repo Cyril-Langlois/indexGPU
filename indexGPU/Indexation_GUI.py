@@ -42,7 +42,7 @@ import Symetry as sy
 from pyquaternion import Quaternion
 
 path2thisFile = abspath(getsourcefile(lambda:0))
-uiclass, baseclass = pg.Qt.loadUiType(os.path.dirname(path2thisFile) + "/Indexation_GUI_tempo2.ui")
+uiclass, baseclass = pg.Qt.loadUiType(os.path.dirname(path2thisFile) + "/Indexation_GUI.ui")
 
 class MainView(uiclass, baseclass):
     def __init__(self, parent):

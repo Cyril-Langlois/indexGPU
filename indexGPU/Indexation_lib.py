@@ -119,7 +119,7 @@ class IndexationGPUderiv:
     texte en quaternions et en Euler. 
     '''    
 
-    def __init__(self, parent, Image, savePath, database, CIFfile, nChunks, Workflow=[['Diff',0]], normType = "centered euclidian", nbSTACK=20_000, nbDB = 20_000, dimPROF = 180):
+    def __init__(self, parent, Image, savePath, database, CIFfile, nChunks, Workflow=[['Diff',0]], normType = "centered euclidian", nbSTACK=20_000, nbDB = 20_000, dimPROF = 180, metric = 'cosine', nW = 10):
         self.parent = parent      
 
         # instruction pour afficher les tableaux de façon lisible
@@ -143,6 +143,8 @@ class IndexationGPUderiv:
         self.nbDB = 4_000
         
         self.dimPROF = dimPROF
+        self.metric = metric
+        self.nW = nW
 
         self.Workflow = Workflow
         self.normType = normType
@@ -273,25 +275,20 @@ class IndexationGPUderiv:
         self.parent.progressBar.setRange(0, progress_len) # Set the range according to the number of batches
         step = 0
 
-        print("dev Indexation_lib library running")
+        # self.metric = 'cosine'
+        print(f"Indexation_lib library running, metric = {self.metric}")
+
         for y in range(self.expChunkNB + 1 * self.remain): # +1 pour prendre en compte le testChunk avec le reste
             
             nbSTACKcurr =  len(self.testArrayList[y][0])
-            
-            length = self.actualProfLength
-            nW = 10
-            sizeW = length // nW
-            size = self.dbChunks
-            sizeC = nbSTACKcurr
-        
-            normedGPUtest = cp.array(self.testArrayList[y])
-            r = cp.stack(cp.vsplit(normedGPUtest, nW), axis = 2)
-            
-            #déviation standard des profils théo
-            r_std_like = cp.einsum('ilk, ilk -> lk', r, r)
-            # r = normedGPUtest
-            del normedGPUtest
-            
+
+            if self.metric == 'cosine':
+                normedGPUtest = cp.array(self.testArrayList[y])
+            else:
+                normedGPUtest = cp.array(self.testArrayList[y]).reshape(self.nW, self.actualProfLength // self.nW, nbSTACKcurr).transpose(1, 2, 0)
+                #déviation standard des profils théo
+                normedGPUtest_std_like = cp.einsum('ilk, ilk -> lk', normedGPUtest, normedGPUtest)
+
             distDataChunk = np.zeros((len(self.listChunksNames), nbSTACKcurr))
             indDataChunk = np.zeros((len(self.listChunksNames), nbSTACKcurr))
             miniChunkInd = np.zeros((len(self.listChunksNames), nbSTACKcurr))
@@ -308,73 +305,39 @@ class IndexationGPUderiv:
                 self.ValSlice = step
                 self.progression_bar()
                
-                print(f"Exp. datachunk {j} out of {len(self.listChunksNames)}")
-
-                # essai plus simple
-
+                if self.metric != 'cosine':
+                    print(f"Exp. datachunk {j} out of {len(self.listChunksNames)}")
                 
                 for k in range(self.loopDB): # on traite le DataChunk courant par petits bouts
-           
-                    normedGPU = cp.array(self.listChunkArraysDiff[j][k*self.dbChunks:(k+1)*self.dbChunks, :])
-                    
-                    # # calcul original sur l'ensemble de la longuer des vecteurs_____
-                    # #distances = cp.matmul(normedGPU, normedGPUtest)
+                    if self.metric == 'cosine':
+                        normedGPU = cp.array(self.listChunkArraysDiff[j][k*self.dbChunks:(k+1)*self.dbChunks, :])
+                    else:
+                        normedGPU = cp.array(self.listChunkArraysDiff[j][k*self.dbChunks:(k+1)*self.dbChunks, :]).reshape(self.dbChunks, self.nW, self.actualProfLength // self.nW).transpose(0, 2, 1)
 
-                    # self.mempool.free_all_blocks()
-                    # self.pinned_mempool.free_all_blocks()
 
-                    # windowed version with loop
-                    # s = cp.zeros((size, sizeC))
-                    # for i in range(nW):
-                    #     s += cp.matmul(normedGPU[:, i*sizeW:(i+1)*sizeW], normedGPUtest[i*sizeW:(i+1)*sizeW, :])
-                    # del normedGPU                    
-                    # distances = s / nW
-                    # del s
+                    if self.metric == 'cosine':
+                        distances = cp.matmul(normedGPU, normedGPUtest)
+                    else:
+                        # batch matrix multiplication using einsum
+                        res = cp.einsum('ijl,jkl->ikl', normedGPU, normedGPUtest)
+                        
+                        normedGPU_std_like = cp.einsum('ilk, ilk -> ik', normedGPU, normedGPU)
+                        # après cette opération, on a res qui est un tableau (3000, 2000, nW)
+                        #on introduit un axe pour le broadcasting
+                        var_i = normedGPU_std_like[:, cp.newaxis, :]  # (M, 1, batch)
+                        var_j = normedGPUtest_std_like[cp.newaxis, :, :]  # (1, M, batch)
+                        del normedGPU_std_like
 
-                    # # version donnant la meme chose que le matmul classique
-                    # l = cp.stack(cp.hsplit(normedGPU, nW), axis = 2)
-                    # # rdéviation standard des profils théo = cp.stack(cp.vsplit(normedGPUtest, nW), axis = 2)
-                    # del normedGPU
-                    # res = cp.einsum('ijl,jkl->ikl', l, r)
-                    # del l
-
-                    # distances = cp.sum(res, axis = 2) / nW
-                    # del res
-
-                    # version avec corrcoef sans fenêtres qui devrait donner comme matmul
-                    # distances = cp.corrcoef(normedGPU, normedGPUtest.T)[:self.dbChunks, self.dbChunks:]
-                    # ça marche (mais très lent), maintenant faut le faire par fenetres
-
-                    # version avec corrcoef "maison" et avec fenêtres (donc résultat différent de matmul)
-                    l = cp.stack(cp.hsplit(normedGPU, nW), axis = 2)
-                    del normedGPU
-                    
-                    # calcul de la covariance des deux jeux de données, fenêtre par fenetre
-                    # et 
-                    
-                    res = cp.einsum('ijl,jkl->ikl', l, r)
-                    l_std_like = cp.einsum('ilk, ilk -> ik', l, l)
-                    del l
-                    
-                    # après cette opération, on a res qui est un tableau (3000, 2000, nW)
-                                        
-                    #on introduit un axe pour le broadcasting
-                    var_i = l_std_like[:, cp.newaxis, :]  # (M, 1, batch)
-                    var_j = r_std_like[cp.newaxis, :, :]  # (1, M, batch)
-                    del l_std_like
-                    
-                    
-                    denominator = cp.sqrt(var_i * var_j)
-                    del var_i
-                    del var_j
-                    
-                    batchCorrMat = res / denominator
-                    del res
-                    del denominator
-                    
-                    # on a alors un tableau (3000, 2000, 10)
-                    # dont on fait la somme
-                    distances = cp.sum(batchCorrMat, axis = 2)
+                        denominator = cp.sqrt(var_i * var_j)
+                        del var_i
+                        del var_j
+                        
+                        res = res / denominator
+                        del denominator
+                        
+                        # on a alors un tableau (3000, 2000, 10)
+                        # dont on fait la somme
+                        distances = cp.sum(res, axis = 2)
                     
                     listDist[k, :] = cp.asnumpy(cp.max(distances, axis=0))
                     listInd[k,:] = cp.asnumpy(np.argmax(distances, axis=0))
@@ -398,9 +361,10 @@ class IndexationGPUderiv:
             self.miniChunk_finalList.append(np.take_along_axis(miniChunkInd, maxInd_array, axis=0)[-1:, :])
             self.whichDataChunkList.append(maxInd_array[-1:, :])
               
-        # del normedGPUtest
-        del r
-        del r_std_like
+        del normedGPUtest
+        if self.metric != 'cosine':
+            del normedGPUtest_std_like
+
         self.mempool.free_all_blocks()
         self.pinned_mempool.free_all_blocks()
         t2 = time.time()

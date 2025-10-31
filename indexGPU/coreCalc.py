@@ -27,6 +27,7 @@ from data_classes import Final_Index_res
 import Compute_IPF as IPF_computation
 import Xallo as xa
 import Symetry as sy
+import Dans_Diffraction as da
 from Indexation_GUI import MainView
 from data_classes import Model
 
@@ -162,7 +163,8 @@ class Controller:
                 quality[i, :, :] = qual
             else :
                 quality[i, :, :] = self.indexation[i].quality_map
-        
+        self.metric = self.indexation[i].metric
+        self.nW = self.indexation[i].nW
         # Table of indices (=phase number) where the quality map is the greatest = phase map
         self.phase_map = np.argmax(quality, axis = 0) 
         for i in range (self.model.nPhases):
@@ -184,9 +186,7 @@ class Controller:
             lenProf = self.model.Stack.shape[0]
             width = self.model.Stack.shape[2]
             height = self.model.Stack.shape[1]
-
        
-        print("lenProf : ", lenProf, "height : ", height, "  width : ", width)
         self.rawImage = np.zeros((lenProf, height, width))
         self.quality_final = np.zeros((height, width))
         self.ori_f = np.zeros((4, height, width))
@@ -251,7 +251,10 @@ class Controller:
         self.BatchProfiles_value = self.view.Profiles_SpinBox.value() # Number of experimental profiles per batch
         self.BatchDatabase_value = self.view.Database_SpinBox.value() # Number of theoretical profiles per batch
         
-        self.indexation =  []
+        # # instanciation of a Final_Index_res object, to be used for all displays
+        # self.res = Final_Index_res(self.model, self.height, self.width, self.lenProf)
+        
+        self.indexation =  []        
         
         # Indexation preparation
         for p, val in enumerate(self.model.preInd.listToIndex):
@@ -276,7 +279,7 @@ class Controller:
                                                         self.model.preInd.chunksList[p],
                                                         Workflow = self.model.preInd.phaseList[p].Workflow, 
                                                         normType = self.normType, nbSTACK=self.BatchProfiles_value,
-                                                        nbDB = self.BatchDatabase_value))
+                                                        nbDB = self.BatchDatabase_value, metric = self.view.metricCB.currentText()))
             else:
                 self.indexation.append(None)
         
@@ -289,10 +292,6 @@ class Controller:
             self.labelIndex()
 
         self.phase_discrimination()
-        
-        # instanciation of a Final_Index_res object, to be used for all displays
-        
-        self.res = Final_Index_res(self.model, self.height, self.width, self.lenProf)
         
         # fill the Final_Index_res with all the data
         self.res.rawImage = self.rawImage
@@ -307,6 +306,8 @@ class Controller:
         self.res.IPF_final_X = self.IPF_final_X
         self.res.IPF_final_Y = self.IPF_final_Y
         self.res.IPF_final_Z = self.IPF_final_Z
+        self.res.metric = self.metric
+        self.res.nW = self.nW
         
         self.res.phase_names = self.model.preInd.phaseIndex.list_phase_name
         
@@ -318,6 +319,8 @@ class Controller:
             self.res.labels = self.labels
         
         self.res.savingRes()
+        self.res.saving_info_txt()
+        
         self.view.Info_box.ensureCursorVisible()
         self.view.Info_box.insertPlainText("\n \u2022 H5 file saved.")
         QApplication.processEvents()
@@ -397,13 +400,15 @@ class Controller:
     
         self.reloadH5 = True #a flag to select which operation to do to be specific to the reload situation
         self.flag_folder = 0
+        self.view.setWindowTitle("H5 file loading...")
         
         # creation of instance of Final_Index_res
         self.res = self.model.reload_data()
-        print("reload nPhases : ", self.model.nPhases)
+        print("reload nPhases : ", len(self.res.CIF_path))
         
         self.height = self.res.height
         self.width = self.res.width
+        self.lenProf = len(self.res.rawImage)
         self.rawImage = self.res.rawImage
         
         self.view.lineROI_carto.setVisible(True)
@@ -411,7 +416,7 @@ class Controller:
         
      
         self.activate_ROI_plots(True)
-        if self.model.nPhases > 1:
+        if len(self.res.CIF_path) > 1:
             self.activate_ROI_plots(False)
         
         self.view.progressBar.setVisible(True) # The progress bar is hidden for clarity
@@ -421,23 +426,25 @@ class Controller:
         self.view.Info_box.insertPlainText("\n \u2022 Data have been loaded.")
         QApplication.processEvents()
 
-        # recover the unique CIF path
+        # recover the unique CIF path, unique because disorientations are (for now) only for one phase
         try:
             self.SymQ = sy.get_proper_quaternions_from_CIF(self.model.CIF_path[0])
             print("CIF found", self.model.CIF_path[0])
         except:
-            CIF_Loc, _ = gf.getFilePathDialog("CIF file (*.cif)")
+            CIF_Loc, _ = gf.getFilePathDialog("CIF file (*.cif) considered for disO and phase name (legacy)")
             print("manual CIF", CIF_Loc[0])
             self.SymQ = sy.get_proper_quaternions_from_CIF(CIF_Loc[0])
             self.model.CIF_path = CIF_Loc   
 
         
         if self.res.legacy:
-            
+            print("legacy indexation")
             # Correct data arrays from nScores extra dimension
             self.res.theoStack_mod = self.res.theoStack_mod[0]
             self.res.theo_stack = self.res.theo_stack[0]
             self.res.ori_f = self.res.ori_f[0]
+            
+            
             
             # Compute IPFs
             toIndex = [True]
@@ -479,9 +486,16 @@ class Controller:
             
             self.res.quality_final = self.quality_map_computation(self.res.lenProf, self.res.theo_stack, self.res.rawImage)
 
+            # retrieving the unique phase name from unique CIF
+            crys = da.functions_crystallography.readcif(listCIF[0])
+            self.res.phase_names.append(crys["_chemical_formula_sum"] + "-" + crys["_space_group_IT_number"])
+            print("legacy phase name found : ", self.res.phase_names)
+
             self.view.Info_box.ensureCursorVisible()
             self.view.Info_box.insertPlainText("\n \u2022 Quality map has been computed")
             QApplication.processEvents()
+        else:
+            print("not legacy")
 
         self.view.displayExpStack(self.res.rawImage)
         self.view.displayQuality(self.res.quality_final) # Display the quality map
@@ -489,9 +503,11 @@ class Controller:
         self.view.displayPhaseMap(self.res.phase_map)
 
         if self.res.legacy:
-            self.view.PhaseMap.setVisible(False)  
+            self.view.PhaseMap.setVisible(False)
+            
         
         self.view.progressBar.setVisible(False)
+        self.updateWindowTitle()
 
     def activate_ROI_plots(self, b):
         self.view.lineROI_carto.setVisible(b)
@@ -540,13 +556,18 @@ class Controller:
                 self.view.displayExpStack(self.rawImage)
         self.height = len(self.rawImage[0, :, 0])
         self.width = len(self.rawImage[0, 0, :])
+        self.lenProf = len(self.rawImage)
+        self.view.setWindowTitle(self.model.StackLoc[0])
 
     def loadData(self):
         # Open the phase form to create phases and set indexation parameters, CIF, data base...
         
         self.view.Info_box.clear() # Clear the information box
         self.model.loadData()
-                
+        
+        # instanciation of a Final_Index_res object, to be used for all displays
+        self.res = Final_Index_res(self.model, self.height, self.width, self.lenProf)
+        
         # Storage folder creation
         ti = time.strftime("%Y-%m-%d__%Hh-%Mm-%Ss") # Absolute time 
         
@@ -560,8 +581,34 @@ class Controller:
         except:
             self.view.Info_box.ensureCursorVisible()
             self.view.Info_box.insertPlainText("\n \u2022 Import experimental data first, then phase(s) info.")           
-
+        
+        self.updateWindowTitle()
+        
         QApplication.processEvents()  
+
+    def updateWindowTitle(self):
+        # changing the window title with database info
+        saveName = ""
+        try: # phase loading wizard just executed so preInd is present
+            for p in self.model.preInd.phaseList:
+                saveName += "_" + p.name + "_" + str(p.DB_Size)
+        except: # a reLoad has been executed, phase objects not present
+            if not self.res.legacy:
+                for i, phase in enumerate(self.res.phase_names):
+                    print(i, phase)
+                    saveName += " " + phase + "_" + str(self.res.database_size[i]) + '_diff' + str(self.res.diff[i]) + ' |'
+            else:
+                print(self.res.phase_names[0])
+                saveName += " " + str(self.res.phase_names[0]) + "  "
+    
+        databasesInfo = saveName[:-2] + " ------------ " + str(self.res.val_kV) + " " + str(self.res.val_deg)
+        
+        # réduction du chemin de StackLoc
+        stackPath = os.path.basename(self.model.StackLoc[0])
+                 
+        
+        self.view.setWindowTitle(stackPath + "    //    Setup :  " + databasesInfo[1:])
+        
 
     def updateROI(self, roi): # Specify what must be done when line segment is moved
         # Get coordinates
