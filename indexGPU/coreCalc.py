@@ -320,6 +320,7 @@ class Controller:
         if self.model.cluster:
             self.res.labels = self.labels
         
+        self.res.reloadH5 = False
         self.res.savingRes()
         self.res.saving_info_txt()
         
@@ -504,7 +505,7 @@ class Controller:
         if self.res.legacy:
             self.view.PhaseMap.setVisible(False)
             
-        
+        # self.res.saving_info_txt()
         self.view.progressBar.setVisible(False)
         self.updateWindowTitle()
 
@@ -581,6 +582,7 @@ class Controller:
             self.view.Info_box.ensureCursorVisible()
             self.view.Info_box.insertPlainText("\n \u2022 Import experimental data first, then phase(s) info.")           
         
+        _ = self.res.extract_conditions()
         self.updateWindowTitle()
         
         QApplication.processEvents()  
@@ -590,7 +592,7 @@ class Controller:
         saveName = ""
         try: # phase loading wizard just executed so preInd is present
             for p in self.model.preInd.phaseList:
-                saveName += "_" + p.name + "_" + str(p.DB_Size)
+                saveName += "_" + p.name + "_" + str(p.DB_Size) + "  "
         except: # a reLoad has been executed, phase objects not present
             if not self.res.legacy:
                 for i, phase in enumerate(self.res.phase_names):
@@ -655,6 +657,8 @@ class Controller:
         self.drawMisO()
 
     def Save_results(self):
+        
+        self.res.saving_info_txt()
         
         IPF_map_X = self.res.IPF_final_X
         IPF_map_Y = self.res.IPF_final_Y
@@ -860,7 +864,7 @@ class Controller:
             self.y = int(mousePoint.y())
 
             # if self.x >= 0 and self.y >= 0 and self.x < self.width and self.y < self.height:
-            if self.x >= 0 and self.y >= 0 and self.x < self.res.width and self.y < self.res.height:
+            if self.x >= 0 and self.y >= 0 and self.x < self.width and self.y < self.height:
 
                 self.drawCHORDprofiles()
                     

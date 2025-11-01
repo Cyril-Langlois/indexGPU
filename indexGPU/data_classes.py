@@ -74,7 +74,7 @@ class Model:
         for i in list_group_Keys:
             group = f[i]
             list_attributs = list(group.attrs.keys())
-            print("1 ", list_attributs)
+            
             if "lenProf" in list_attributs:
                 self.lenProf = group.attrs['lenProf']
             if "profile length" in list_attributs:
@@ -101,11 +101,12 @@ class Model:
         self.indexRes.database_path = self.database_path
         self.indexRes.database_size = self.database_size
         self.indexRes.diff = self.diff
+        self.indexRes.reloadH5 = True
 
         for i in list_group_Keys:
             group = f[i]
             list_attributs = list(group.attrs.keys())
-            print("2 ", list_attributs)
+            
             if "nPhases" in list_attributs:
                 self.nPhases = group.attrs['nPhases']            
             if "cluster" in list_attributs:
@@ -152,7 +153,7 @@ class Model:
         
         self.indexRes.cluster = self.cluster
         self.indexRes.otsu = self.otsu
-        print(f"flag cluster : {self.indexRes.cluster}, flag otsu : {self.indexRes.otsu}")
+        # print(f"flag cluster : {self.indexRes.cluster}, flag otsu : {self.indexRes.otsu}")
         
         if self.indexRes.cluster:
             self.indexRes.height = len(self.indexRes.labels)
@@ -351,10 +352,10 @@ class Final_Index_res:
             return val + mark
     
     def saving_info_txt(self):
-        
+        print("enter saving indexation info.txt")
         ti = time.strftime("%Y-%m-%d__%Hh-%Mm-%Ss")
         
-        with open(self.savePath + '\Indexation_'+ ti + self.saveName + '_info.txt', 'w') as file:
+        with open(self.savePath + '\Indexation_'+ ti + '_info.txt', 'w') as file:
             
             file.write("----------------- Indexation info  --------------------" + '\n')
             file.write("acc. voltage : " + str(self.val_kV) + '\n')
@@ -369,25 +370,41 @@ class Final_Index_res:
             file.write("stack path : " + str(self.stack_path) + '\n')
             file.write("normalization before indexation : " + str(self.normType) + '\n')
             file.write("metric for Indexation : " + str(self.metric) + '\n')
-            file.write("       if metric = NCC, window nb : " + str(self.nW) + '\n'*3)
             
-            i = 0
-            file.write("----------------- Phase(s) information --------------------" + '\n')
-            for p in self.model.preInd.phaseList:
-                try:
-                    file.write(str(p.name) + '\n')
-                    file.write("     CIF path : " + str(p.CifLoc) + '\n')
-                    file.write("     database path : " + str(p.DatabaseLoc) + '\n')
-                    file.write("     database size : " + str(p.DB_Size) + '\n')
-                    file.write("     index deriv : " + str(p.diff) + '\n')
-                    file.write("     Savitzky Golay / " + str(p.SG) + '\n')
-                    file.write("     Savitzky Golay_poly : " + str(p.SG_poly) + '\n')
-                    file.write("     Savitzky Golay_window : " + str(p.SG_win) + '\n')              
-                except: 
-                    file.write("Phase non indexed : " + str(i))
+            if self.metric != 'cosine':
+                file.write("       if metric = NCC, window nb : " + str(self.nW) + '\n'*3)
+            
+            
+            if not self.reloadH5:
+                i = 0
+                file.write("----------------- Phase(s) information --------------------" + '\n')
+                for p in self.model.preInd.phaseList:
+                    try:
+                        file.write(str(p.name) + '\n')
+                        file.write("     CIF path : " + str(p.CifLoc) + '\n')
+                        file.write("     database path : " + str(p.DatabaseLoc) + '\n')
+                        file.write("     database size : " + str(p.DB_Size) + '\n')
+                        file.write("     index deriv : " + str(p.diff) + '\n')
+                        file.write("     Savitzky Golay / " + str(p.SG) + '\n')
+                        file.write("     Savitzky Golay_poly : " + str(p.SG_poly) + '\n')
+                        file.write("     Savitzky Golay_window : " + str(p.SG_win) + '\n')              
+                    except: 
+                        file.write("Phase non indexed : " + str(i))
+    
+                    i += 1
+            else:
+                for i in range(len(self.phase_names)):
+                    file.write('\n'*3 + "----------------- Phase(s) information --------------------" + '\n')
+                    file.write(str(self.phase_names[i]) + '\n')
+                    file.write("     CIF path : " + str(self.CIF_path[i]) + '\n')
+                    try:
+                        file.write("     database path : " + str(self.database_path[i]) + '\n')
+                        file.write("     database size : " + str(self.database_size[i]) + '\n')
+                        file.write("     index deriv : " + str(self.diff[i]) + '\n')
+                    except:
+                        file.write("--- legacy indexation - some info missing ---" + '\n')
 
-                i += 1
-                
+                    
                 
     def savingMTEX(self):
         
