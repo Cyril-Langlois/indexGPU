@@ -9,6 +9,7 @@ import sys
 import numpy as np
 import pyqtgraph as pg
 from inichord import General_Functions as gf
+from inichord import Edit_Tools as sm
 
 import tifffile as tf
 from PyQt5.QtWidgets import QApplication
@@ -72,7 +73,7 @@ class Controller:
         
         self.proxy7 = pg.SignalProxy(self.view.PhaseMap.scene.sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
         self.proxy8 = pg.SignalProxy(self.view.PhaseMap.ui.graphicsView.scene().sigMouseClicked, rateLimit=60, slot=self.mouseClick)
-
+        
     def creationListProfilesOtsu(self):
         # Sets the phase map to Otsu map, creates a list of list of coordinates and a list of list of profiles
         self.listCoordPhases = []
@@ -163,7 +164,8 @@ class Controller:
                 quality[i, :, :] = qual
             else :
                 quality[i, :, :] = self.indexation[i].quality_map
-                
+        
+        # on prend celui d'indice i, avec i contenant la dernière valeur de la boucle précédente
         self.metric = self.indexation[i].metric
         self.nW = self.indexation[i].nW
         
@@ -209,7 +211,8 @@ class Controller:
         for p, val in enumerate(toIndex):
             if val:
                 listCIF.append(self.indexation[p].CIF)
-                
+                self.metric = self.indexation[p].metric
+                self.nW = self.indexation[p].nW                
                 #Construction des éléments finaux qui sont un mix des éléments de chaque phase
                 for i, c in enumerate(self.listCoordPhases[p]): 
                     if self.model.otsu: # In otsu case, the quality map is an array of shape : (number of pix in phase p, 1)
@@ -226,7 +229,8 @@ class Controller:
                     self.theo_stack[:, c[0], c[1]] = self.indexation[p].nScoresStack[0, :, x, y]
                     self.theoStack_mod[:, c[0], c[1]] = self.indexation[p].Treatment_theo_prof[0, :, x, y]
                     self.expStack_mod[:, c[0], c[1]] = self.indexation[p].testArrayList[:, x, y]
-                    
+                    # on prend celui d'indice i, avec i contenant la dernière valeur de la boucle précédente
+
         self.view.Info_box.ensureCursorVisible()
         self.view.Info_box.insertPlainText("\n \u2022 Quality map has been computed.")
         QApplication.processEvents()
@@ -256,7 +260,8 @@ class Controller:
         # # instanciation of a Final_Index_res object, to be used for all displays
         # self.res = Final_Index_res(self.model, self.height, self.width, self.lenProf)
         
-        self.indexation =  []        
+        self.indexation =  []
+        self.metric = self.view.metricCB.currentText()        
         
         # Indexation preparation
         for p, val in enumerate(self.model.preInd.listToIndex):
@@ -281,7 +286,7 @@ class Controller:
                                                         self.model.preInd.chunksList[p],
                                                         Workflow = self.model.preInd.phaseList[p].Workflow, 
                                                         normType = self.normType, nbSTACK=self.BatchProfiles_value,
-                                                        nbDB = self.BatchDatabase_value, metric = self.view.metricCB.currentText()))
+                                                        nbDB = self.BatchDatabase_value, metric = self.metric))
             else:
                 self.indexation.append(None)
         
@@ -418,9 +423,18 @@ class Controller:
         self.view.label_phases.setVisible(True)
      
         self.activate_ROI_plots(True)
-        if len(self.res.CIF_path) > 1:
-            self.activate_ROI_plots(False)
-        
+        self.res.phaseSG = []
+        # if len(self.res.CIF_path) > 1:
+        #     self.activate_ROI_plots(False)
+        for cif in self.res.CIF_path:
+            if cif != 'not indexed':
+                crys = da.functions_crystallography.readcif(cif)
+                self.res.phaseSG.append(crys["_space_group_IT_number"])
+        SG = self.res.phaseSG[0]
+        for sg in self.res.phaseSG:
+            if sg != SG:
+                self.activate_ROI_plots(False)
+         
         self.view.progressBar.setVisible(True) # The progress bar is hidden for clarity
         
         self.view.Info_box.clear() # Clear the information box
@@ -429,15 +443,23 @@ class Controller:
         QApplication.processEvents()
 
         # recover the unique CIF path, unique because disorientations are (for now) only for one phase
+        # or phases with identical space group
+        
+        i = 0
+        while self.res.CIF_path[i] == "not indexed":
+            i += 1
+            
         try:
-            self.SymQ = sy.get_proper_quaternions_from_CIF(self.model.CIF_path[0])
-            print("CIF found", self.model.CIF_path[0])
+            self.SymQ = sy.get_proper_quaternions_from_CIF(self.res.CIF_path[i])
+            print("CIF found", self.res.CIF_path[i])
+            
         except:
             CIF_Loc, _ = gf.getFilePathDialog("CIF file (*.cif) considered for disO and phase name (legacy)")
             print("manual CIF", CIF_Loc[0])
             self.SymQ = sy.get_proper_quaternions_from_CIF(CIF_Loc[0])
             self.model.CIF_path = CIF_Loc   
-
+        
+        
         
         if self.res.legacy:
             print("legacy indexation")
@@ -488,7 +510,7 @@ class Controller:
 
             # retrieving the unique phase name from unique CIF
             crys = da.functions_crystallography.readcif(listCIF[0])
-            self.res.phase_names.append(crys["_chemical_formula_sum"] + "-" + crys["_space_group_IT_number"])
+            self.res.phase_names.append(crys["_chemical_name_mineral"] + "-" + crys["_space_group_IT_number"])
             print("legacy phase name found : ", self.res.phase_names)
 
             self.view.Info_box.ensureCursorVisible()
@@ -558,6 +580,7 @@ class Controller:
         self.width = len(self.rawImage[0, 0, :])
         self.lenProf = len(self.rawImage)
         self.view.setWindowTitle(self.model.StackLoc[0])
+        self.Current_stack = self.rawImage
 
     def loadData(self):
         # Open the phase form to create phases and set indexation parameters, CIF, data base...
@@ -567,11 +590,14 @@ class Controller:
         
         # instanciation of a Final_Index_res object, to be used for all displays
         self.res = Final_Index_res(self.model, self.height, self.width, self.lenProf)
-        
+        _ = self.res.extract_conditions()
         # Storage folder creation
         ti = time.strftime("%Y-%m-%d__%Hh-%Mm-%Ss") # Absolute time 
+        title, phaseInfo = self.updateWindowTitle()
         
-        directory = "Indexation_" + ti # Name of the main folder
+        # directory = "Indexation_" + ti # Name of the main folder
+        directory = "Indexation_" + ti + phaseInfo # Name of the main folder
+
         try:
             self.PathDir = os.path.join(self.model.StackDir, directory)  # where to create the main folder
             os.mkdir(self.PathDir)  # Create main folder
@@ -582,33 +608,38 @@ class Controller:
             self.view.Info_box.ensureCursorVisible()
             self.view.Info_box.insertPlainText("\n \u2022 Import experimental data first, then phase(s) info.")           
         
-        _ = self.res.extract_conditions()
-        self.updateWindowTitle()
+        
+        
         
         QApplication.processEvents()  
 
     def updateWindowTitle(self):
         # changing the window title with database info
         saveName = ""
+        saveName_short = ""
         try: # phase loading wizard just executed so preInd is present
             for p in self.model.preInd.phaseList:
                 saveName += "_" + p.name + "_" + str(p.DB_Size) + "  "
+                saveName_short += "_" + p.name
         except: # a reLoad has been executed, phase objects not present
             if not self.res.legacy:
                 for i, phase in enumerate(self.res.phase_names):
                     print(i, phase)
                     saveName += " " + phase + " " + str(self.res.database_size[i]) + ' diff ' + str(self.res.diff[i]) + '  | '
+                    saveName_short += "_" + phase
             else:
                 print(self.res.phase_names[0])
                 saveName += " " + str(self.res.phase_names[0]) + "  "
+                saveName_short += "_" + phase
     
         databasesInfo = saveName[:-2] + " ------------ " + str(self.res.val_kV) + " " + str(self.res.val_deg)
         
         # réduction du chemin de StackLoc
         stackPath = os.path.basename(self.model.StackLoc[0])
                  
-        
-        self.view.setWindowTitle(stackPath + "    //    Setup :  " + databasesInfo[1:])
+        title = stackPath + "    //    Setup :  " + databasesInfo[1:]
+        self.view.setWindowTitle(title)
+        return title, saveName_short
         
 
     def updateROI(self, roi): # Specify what must be done when line segment is moved

@@ -167,7 +167,7 @@ class Model:
             del self.preInd
         except:
             pass
-
+        print(f" CIF_path list : {self.indexRes.CIF_path}")
         return self.indexRes
         
 class preIndexation:
