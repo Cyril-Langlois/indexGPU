@@ -426,10 +426,31 @@ class Controller:
         self.res.phaseSG = []
         # if len(self.res.CIF_path) > 1:
         #     self.activate_ROI_plots(False)
-        for cif in self.res.CIF_path:
+ 
+        for p, cif in enumerate(self.res.CIF_path):
             if cif != 'not indexed':
-                crys = da.functions_crystallography.readcif(cif)
-                self.res.phaseSG.append(crys["_space_group_IT_number"])
+                try:
+                    crys = da.functions_crystallography.readcif(cif)
+                    self.res.phaseSG.append(crys["_space_group_IT_number"])
+                    self.SymQ = sy.get_proper_quaternions_from_CIF(self.res.CIF_path[p])
+                    print("CIF found", self.res.CIF_path[p])
+                except:
+                    CIF_Loc, _ = gf.getFilePathDialog(f"CIF file (*.cif) - disO and phase name (legacy) // actual CIF path : {cif}")
+                    print("manual CIF", CIF_Loc[0])
+                    self.SymQ = sy.get_proper_quaternions_from_CIF(CIF_Loc[0])
+                    self.model.CIF_path = CIF_Loc
+                    self.res.CIF_path[p] = CIF_Loc[0]
+                    crys = da.functions_crystallography.readcif(CIF_Loc[0])
+                    self.res.phaseSG.append(crys["_space_group_IT_number"])
+                    
+                    
+                
+ 
+        # for cif in self.res.CIF_path:
+        #     if cif != 'not indexed':
+        #         crys = da.functions_crystallography.readcif(cif)
+        #         self.res.phaseSG.append(crys["_space_group_IT_number"])
+        
         SG = self.res.phaseSG[0]
         for sg in self.res.phaseSG:
             if sg != SG:
@@ -445,19 +466,19 @@ class Controller:
         # recover the unique CIF path, unique because disorientations are (for now) only for one phase
         # or phases with identical space group
         
-        i = 0
-        while self.res.CIF_path[i] == "not indexed":
-            i += 1
+        # i = 0
+        # while self.res.CIF_path[i] == "not indexed":
+        #     i += 1
             
-        try:
-            self.SymQ = sy.get_proper_quaternions_from_CIF(self.res.CIF_path[i])
-            print("CIF found", self.res.CIF_path[i])
+        # try:
+        #     self.SymQ = sy.get_proper_quaternions_from_CIF(self.res.CIF_path[i])
+        #     print("CIF found", self.res.CIF_path[i])
             
-        except:
-            CIF_Loc, _ = gf.getFilePathDialog("CIF file (*.cif) considered for disO and phase name (legacy)")
-            print("manual CIF", CIF_Loc[0])
-            self.SymQ = sy.get_proper_quaternions_from_CIF(CIF_Loc[0])
-            self.model.CIF_path = CIF_Loc   
+        # except:
+        #     CIF_Loc, _ = gf.getFilePathDialog("CIF file (*.cif) considered for disO and phase name (legacy)")
+        #     print("manual CIF", CIF_Loc[0])
+        #     self.SymQ = sy.get_proper_quaternions_from_CIF(CIF_Loc[0])
+        #     self.model.CIF_path = CIF_Loc   
         
         
         
