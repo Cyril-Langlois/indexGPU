@@ -451,10 +451,16 @@ class Controller:
         #         crys = da.functions_crystallography.readcif(cif)
         #         self.res.phaseSG.append(crys["_space_group_IT_number"])
         
-        SG = self.res.phaseSG[0]
+        SG = int(self.res.phaseSG[0])
+        PG_p = IPF_computation.get_pg_p(SG)
+        print(f"ref space group : {SG}, ref point groupe : {PG_p}")
         for sg in self.res.phaseSG:
-            if sg != SG:
+            # if sg != SG:
+            pg_p = IPF_computation.get_pg_p(int(sg))
+            print(f"phase space group : {sg}, phase point groupe : {pg_p}")
+            if pg_p != PG_p:
                 self.activate_ROI_plots(False)
+                print("not same proper point group")
          
         self.view.progressBar.setVisible(True) # The progress bar is hidden for clarity
         

@@ -21,6 +21,7 @@ from orix.crystal_map import CrystalMap, PhaseList
 from orix.quaternion import Rotation, symmetry
 from orix import plot as orixPlot
 from orix.vector import Vector3d
+from orix import quaternion as oq
 
 import tkinter as tk
 from tkinter import filedialog, Tk
@@ -166,3 +167,7 @@ def IPF_Z_GUI(simple_quats, PhaseName, PG, phase, listCoord, listToIndex, Ipf_di
             i += len(listCoord[ph])
 
     return rgb, xmap2_i
+
+def get_pg_p(SGnum):
+    return oq.get_point_group(int(SGnum), proper=True)
+    
