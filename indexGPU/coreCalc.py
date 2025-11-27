@@ -166,9 +166,18 @@ class Controller:
                 quality[i, :, :] = self.indexation[i].quality_map
         
         # on prend celui d'indice i, avec i contenant la dernière valeur de la boucle précédente
-        self.metric = self.indexation[i].metric
-        self.nW = self.indexation[i].nW
-        
+        # warning : il faut prendre une phase qui n'est pas 'not indexed' !!
+        # Run indexation matching step
+        try:
+            for p, val in enumerate(self.model.preInd.listToIndex):
+                if val:
+                    self.metric = self.indexation[i].metric
+                    self.nW = self.indexation[i].nW
+        except:
+            self.metric = "cosine"
+            self.nW = 10
+            
+            
         # Table of indices (=phase number) where the quality map is the greatest = phase map
         self.phase_map = np.argmax(quality, axis = 0) 
         for i in range (self.model.nPhases):

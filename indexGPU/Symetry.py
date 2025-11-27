@@ -172,4 +172,4 @@ def operationsPropresList(listOpGE):
     for i in range(len(tupled_lst)):
         lst2.append(np.asarray(tupled_lst[i]).reshape((3, 3)))
     
-    return lst2         
+    return lst2  

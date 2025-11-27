@@ -425,7 +425,8 @@ class Final_Index_res:
             for i in range(x):
                 for j in range(y):
 
-                    index = 1    
+                    # index = 1    
+                    index = self.phase_map[i, j]
                     if Quat[0,i,j] ==0 :
                         index = 0
                     file.write(str(index) + '\t' + str(j) + '\t' + str(i) + '\t' + str(Quat[0, i, j]) +
