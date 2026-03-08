@@ -7,8 +7,8 @@ setup(
     version='0.1.60',
     packages=find_packages(),
     install_requires=[
-        "inichord >= 0.1.15",
-		"cupy-cuda12x >= 13.3.0",
+        "inichord >= 0.1.40",
+		"cupy-cuda13x >= 14.0.0",
 		"orix >= 0.11",
 		"Dans-Diffraction >=3.2",
 		"pyquaternion >=0.9",
