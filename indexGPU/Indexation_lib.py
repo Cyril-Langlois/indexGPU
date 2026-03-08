@@ -65,7 +65,7 @@ def DBopen(DB, nChunks):
     
     for i in listGroups:
         if "Sampling" in f[i].attrs.keys():
-            rawProfileLength = int(f[i].attrs["Sampling"])
+            rawProfileLength = int(f[i].attrs["Sampling"][0])
             
     if rawProfileLength == 0:
         rawProfileLength = 360 # valeur par défaut si Sampling non trouvé dans la base
