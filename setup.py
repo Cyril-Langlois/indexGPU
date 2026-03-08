@@ -4,7 +4,7 @@ from glob import glob
 
 setup(
     name='indexGPU',
-    version='0.1.59',
+    version='0.1.60',
     packages=find_packages(),
     install_requires=[
         "inichord >= 0.1.15",
