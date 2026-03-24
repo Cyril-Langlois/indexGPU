@@ -12,7 +12,7 @@ from inichord import General_Functions as gf
 from inichord import Edit_Tools as sm
 
 import tifffile as tf
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QFileDialog
 from PyQt5 import QtCore, QtGui
 
 #------------------------------import for GitHub lib use-------------------------
@@ -633,9 +633,12 @@ class Controller:
         
         # directory = "Indexation_" + ti # Name of the main folder
         directory = "Indexation_" + ti + phaseInfo # Name of the main folder
+        
+        self.dir_name = QFileDialog.getExistingDirectory(self.view, "Select a Directory to save indexation results")
 
         try:
-            self.PathDir = os.path.join(self.model.StackDir, directory)  # where to create the main folder
+            # self.PathDir = os.path.join(self.model.StackDir, directory)  # where to create the main folder
+            self.PathDir = os.path.join(self.dir_name, directory)  # where to create the main folder
             os.mkdir(self.PathDir)  # Create main folder
             self.flag_folder = 1 # Specify if a new folder has to be created when reload ancient data
             self.view.Info_box.ensureCursorVisible()
